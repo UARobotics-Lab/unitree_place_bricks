@@ -41,34 +41,12 @@ class G1JointIndex:
     RightWristYaw = 28
    
     kNotUsedJoint = 29
-## VERIFICAR SI ESTO ES CORRECTO
-    #Manos
-    LeftHandThumb0=30
-    LeftHandThumb1=31
-    LeftHandThumb2=32
-    
-    LeftHandMiddle0=33
-    LeftHandMiddle1=34
-    
-    LeftHandIndex0=35
-    LeftHandIndex1=36
 
-    RightHandThumb0=37
-    RightHandThumb1=38
-    RightHandThumb2=39
-    
-    RightHandMiddle0=40
-    RightHandMiddle1=41
-    
-    RightHandIndex0=42
-    RightHandIndex1=43
 
 
 BRAZO_IZQ = [15, 16, 17, 18, 19, 20, 21]
 BRAZO_DER = [22, 23, 24, 25, 26, 27, 28]
 
-MANO_DER=[30, 31, 32,33, 34, 35, 36]
-MANO_IZQ=[37, 38, 39,40, 41, 42, 43]
 
 CINTURA = [12, 13, 14]
 BRAZOS_Y_CINTURA = BRAZO_IZQ + BRAZO_DER + CINTURA
@@ -240,35 +218,6 @@ def grabar_modo_3(reader, pasos, contador):
     print(f"Duración asignada: {pasos[-1]['duracion']} segundos")
     return contador + 1
 
-#NUEVO
-def grabar_modo_4(reader, pasos, contador):
-    pos_izq = reader.get_joint_positions(MANO_IZQ)
-    paso = {
-        "nombre": f"Paso {contador}",
-        "posiciones": pos_izq,
-        "duracion": 0
-    }
-    pasos.append(paso)
-    vista_previa_parcial("MANO izquierda", pos_izq, contador - 1)
-
-    input(f"Captura brazo derecho para paso {contador}. Enter para continuar...")
-    pos_der = reader.get_joint_positions(MANO_DER)
-    pasos[-1]["posiciones"].update(pos_der)
-    vista_previa_parcial("Mano derecho", pos_der, contador - 1)
-
-    grabar_cintura = input("¿Capturar cintura para este paso? [s/n]: ").strip().lower()
-    if grabar_cintura == 's':
-        pos_cintura = reader.get_joint_positions(CINTURA)
-        pasos[-1]["posiciones"].update(pos_cintura)
-        vista_previa_parcial("cintura", pos_cintura, contador - 1)
-    else:
-        for j in CINTURA:
-            pasos[-1]["posiciones"][j] = 0.0
-
-    pasos[-1]["duracion"] = solicitar_duracion()
-    print(f"Duración asignada: {pasos[-1]['duracion']} segundos")
-    return contador + 1
-
 def repetir_pasos(pasos, contador):
     try:
         n = int(input("¿Cuántos pasos anteriores quiere repetir?: "))
@@ -425,7 +374,6 @@ def main():
         print("  1: Grabar todos los motores.")
         print("  2: Capturar brazo izquierdo → derecho → cintura opcional.")
         print("  3: Capturar brazo izquierdo y generar espejo derecho.")
-        print("  4: Capturar mano izquierda → derecho → cintura opcional..")
         print("  r: Repetir últimos pasos.")
         print("  d: Duplicar un paso específico.")
         print("  m: Modificar un paso existente.")
@@ -440,9 +388,7 @@ def main():
             contador = grabar_modo_2(reader, pasos, contador)
         elif modo == '3':
             contador = grabar_modo_3(reader, pasos, contador)
-        elif modo == '4':
-            contador = grabar_modo_4(reader, pasos, contador)
-        elif modo == 'r':
+                elif modo == 'r':
             contador = repetir_pasos(pasos, contador)
         elif modo == 'd':
             contador = duplicar_paso(pasos, contador)
