@@ -6,6 +6,25 @@ from datetime import datetime
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize, ChannelSubscriber
 from unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowState_
 
+import numpy as np
+from enum import IntEnum
+import time
+import os
+import sys
+import threading
+from multiprocessing import Process, shared_memory, Array, Lock
+
+
+# Importando las clases necesarias para el manejo de mensajes y canales
+from unitree_sdk2py.core.channel import ChannelPublisher, ChannelSubscriber, ChannelFactoryInitialize # dds
+from unitree_sdk2py.idl.unitree_hg.msg.dds_ import HandCmd_, HandState_                               # idl
+from unitree_sdk2py.idl.default import unitree_hg_msg_dds__HandCmd_
+
+# for gripper
+from unitree_sdk2py.core.channel import ChannelPublisher, ChannelSubscriber, ChannelFactoryInitialize # dds
+from unitree_sdk2py.idl.unitree_go.msg.dds_ import MotorCmds_, MotorStates_                           # idl
+from unitree_sdk2py.idl.default import unitree_go_msg_dds__MotorCmd_
+
 class G1JointIndex:
     #Cadera
     LeftHipPitch = 0
@@ -41,8 +60,12 @@ class G1JointIndex:
     RightWristYaw = 28
    
     kNotUsedJoint = 29
+<<<<<<< HEAD
 ## VERIFICAR SI ESTO ES CORRECTO
     #Manos
+=======
+""" 
+>>>>>>> 03db1ee2148cd3b172e59fccb5c31ebf50e06e35
     LeftHandThumb0=30
     LeftHandThumb1=31
     LeftHandThumb2=32
@@ -61,14 +84,12 @@ class G1JointIndex:
     RightHandMiddle1=41
     
     RightHandIndex0=42
-    RightHandIndex1=43
-
+    RightHandIndex1=43 """
+""
 
 BRAZO_IZQ = [15, 16, 17, 18, 19, 20, 21]
 BRAZO_DER = [22, 23, 24, 25, 26, 27, 28]
 
-MANO_DER=[30, 31, 32,33, 34, 35, 36]
-MANO_IZQ=[37, 38, 39,40, 41, 42, 43]
 
 CINTURA = [12, 13, 14]
 BRAZOS_Y_CINTURA = BRAZO_IZQ + BRAZO_DER + CINTURA
@@ -79,6 +100,87 @@ MIRROR_MAP = {
 }
 
 id_a_nombre = {v: k for k, v in G1JointIndex.__dict__.items() if not k.startswith('__') and not callable(v)}
+
+def control_process(self, left_hand_array, right_hand_array, left_hand_state_array, right_hand_state_array,
+                              dual_hand_data_lock = None, dual_hand_state_array = None, dual_hand_action_array = None):
+       self.running = True
+
+       left_q_target  = np.full(Dex3_Num_Motors, 0)
+       right_q_target = np.full(Dex3_Num_Motors, 0)
+
+       q = 0.0
+       dq = 0.0
+       tau = 0.0
+       kp = 1.5
+       kd = 0.2
+
+        # initialize dex3-1's left hand cmd msg
+       self.left_msg  = unitree_hg_msg_dds__HandCmd_()
+       for id in Dex3_1_Left_JointIndex:
+           ris_mode = self._RIS_Mode(id = id, status = 0x01)
+           motor_mode = ris_mode._mode_to_uint8()
+           self.left_msg.motor_cmd[id].mode = motor_mode
+           self.left_msg.motor_cmd[id].q    = q
+           self.left_msg.motor_cmd[id].dq   = dq
+           self.left_msg.motor_cmd[id].tau  = tau
+           self.left_msg.motor_cmd[id].kp   = kp
+           self.left_msg.motor_cmd[id].kd   = kd
+
+       # initialize dex3-1's right hand cmd msg
+       self.right_msg = unitree_hg_msg_dds__HandCmd_()
+       for id in Dex3_1_Right_JointIndex:
+           ris_mode = self._RIS_Mode(id = id, status = 0x01)
+           motor_mode = ris_mode._mode_to_uint8()
+           self.right_msg.motor_cmd[id].mode = motor_mode  
+           self.right_msg.motor_cmd[id].q    = q
+           self.right_msg.motor_cmd[id].dq   = dq
+           self.right_msg.motor_cmd[id].tau  = tau
+           self.right_msg.motor_cmd[id].kp   = kp
+           self.right_msg.motor_cmd[id].kd   = kd  
+
+       try:
+           while self.running:
+               start_time = time.time()
+               # get dual hand state
+               left_hand_mat  = np.array(left_hand_array[:]).reshape(25, 3).copy()
+               right_hand_mat = np.array(right_hand_array[:]).reshape(25, 3).copy()
+
+               # Read left and right q_state from shared arrays
+               state_data = np.concatenate((np.array(left_hand_state_array[:]), np.array(right_hand_state_array[:])))
+
+               if not np.all(right_hand_mat == 0.0) and not np.all(left_hand_mat[4] == np.array([-1.13, 0.3, 0.15])): # if hand data has been initialized.
+                   ref_left_value = left_hand_mat[unitree_tip_indices]
+                   ref_right_value = right_hand_mat[unitree_tip_indices]
+                   ref_left_value[0] = ref_left_value[0] * 1.15
+                   ref_left_value[1] = ref_left_value[1] * 1.05
+                   ref_left_value[2] = ref_left_value[2] * 0.95
+                   ref_right_value[0] = ref_right_value[0] * 1.15
+                   ref_right_value[1] = ref_right_value[1] * 1.05
+                   ref_right_value[2] = ref_right_value[2] * 0.95
+
+                   left_q_target  = self.hand_retargeting.left_retargeting.retarget(ref_left_value)[self.hand_retargeting.right_dex_retargeting_to_hardware]
+                   right_q_target = self.hand_retargeting.right_retargeting.retarget(ref_right_value)[self.hand_retargeting.right_dex_retargeting_to_hardware]
+
+               # get dual hand action
+               action_data = np.concatenate((left_q_target, right_q_target))    
+               if dual_hand_state_array and dual_hand_action_array:
+                   with dual_hand_data_lock:
+                       dual_hand_state_array[:] = state_data
+                       dual_hand_action_array[:] = action_data
+
+               self.ctrl_dual_hand(left_q_target, right_q_target)
+               current_time = time.time()
+               time_elapsed = current_time - start_time
+               sleep_time = max(0, (1 / self.fps) - time_elapsed)
+               time.sleep(sleep_time)
+       finally:
+           print("Dex3_1_Controller has been closed.")
+
+
+
+
+
+
 
 class ArmStateReader:
     def __init__(self):

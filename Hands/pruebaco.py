@@ -42,6 +42,7 @@ class G1JointIndex:
    
     kNotUsedJoint = 29
 
+#AGREGAR MANOS 
 
 
 BRAZO_IZQ = [15, 16, 17, 18, 19, 20, 21]
