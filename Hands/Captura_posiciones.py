@@ -109,11 +109,11 @@ class Dex3_1_Reader:
         #Crear los suscriptores para los estados de las posiciones de las manos actuales 
        
         # LeftHandState_subscriber
-        self.LeftHandState_subscriber = ChannelSubscriber("rt/unitree_hg/left_hand_state", HandState_)
+        self.LeftHandState_subscriber = ChannelSubscriber("rt/dex3/left/state", HandState_)
         self.LeftHandState_subscriber.Init(self.left_hand_state_callback, 10)
         
         # RightHandState_subscriber
-        self.RightHandState_subscriber = ChannelSubscriber("rt/unitree_hg/right_hand_state", HandState_)
+        self.RightHandState_subscriber = ChannelSubscriber("rt/dex3/right/state", HandState_)
         self.RightHandState_subscriber.Init(self.right_hand_state_callback, 10)
 
     #Funciones de callback para los estados de las manos    
@@ -141,7 +141,7 @@ class Dex3_1_Reader:
     #Obtener posiciones de las manos
     # Esta función devuelve un diccionario con las posiciones de las manos
     def get_hand_positions(self):
-        if not (self.first_ready and self.right_ready):
+        if not (self.left_ready and self.right_ready):
             return None
         
         left_q = [m.q for m in self.left_hand_state.motor_state]
@@ -314,7 +314,7 @@ def grabar_modo_3(reader, pasos, contador):
     return contador + 1
 
 #Manos
-def grabar_modo_4(reader, pasos, contador):
+def grabar_modo_4(reader, pasos, contador, manos):
     print(f"\nCapturando paso {contador} en modo 4 (manos → brazos → cintura)...")
 
     estado_manos = manos.get_hand_positions()
