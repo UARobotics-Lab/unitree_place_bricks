@@ -92,6 +92,7 @@ class HandSequence:
             msg.motor_cmd[i].kd = self.kd
 
     def send_left(self, posiciones: dict ):
+        msg= self.msg_left
         
         """Posicionnes: dict con claves int (índices de motores) y valores float (posiciones deseadas)(indices 0-6) y valores en radianes.
             Mano: str, "left" o "right" para especificar la mano a controlar.
@@ -119,6 +120,8 @@ class HandSequence:
         self.publisher.Write(self.msg_left)
 
     def send_right(self, posiciones: dict ):
+        msg= self.msg_right
+            
 
         for i in range(self.num_motors):
                     msg.motor_cmd[i].q=posiciones.get(i,0.0)
