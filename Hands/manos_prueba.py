@@ -272,11 +272,11 @@ def main():
         #Mover manos
         if posiciones_mano_izq:
             #Mover mano izquierda        
-            hand_seq.send(posiciones_mano, mano="left")
+            hand_seq.send(posiciones_mano_izq, mano="left")
 
         if posiciones_mano_der:
             #Mover mano derecha            
-            hand_seq.send(posiciones_mano, mano="right")
+            hand_seq.send(posiciones_mano_der, mano="right")
 
         time.sleep(duracion)  # Esperar la duración del paso
 
