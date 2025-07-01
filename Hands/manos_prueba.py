@@ -108,19 +108,16 @@ class HandSequence:
             raise ValueError("Mano debe ser 'left' o 'right'")
 
         for i in range(self.num_motors):
-            if i in posiciones:
-                msg.motor_cmd[i].q = posiciones[i]
-            else:
-                msg.motor_cmd[i].q = 0.0  # Valor por defecto si no se especifica
+            msg.motor_cmd[i].q=posiciones.get(i,0.0) # Valor por defecto si no se especifica
         
         publisher.Write(msg)
 
         # Calcular CRC y enviar el mensaje
         # msg.crc = CRC().Crc(msg)
-        if mano == "left":
+        """ if mano == "left":
             self.publisher.Write(msg)
         else:
-            self.publisher_right.Write(msg)
+            self.publisher_right.Write(msg) """
 
     def freeze_and_release(self):
         for i in range(self.num_motors):
@@ -274,13 +271,11 @@ def main():
 
         #Mover manos
         if posiciones_mano_izq:
-            #Mover mano izquierda
-            posiciones_mano = {i: posiciones_mano_izq.get(f"mano_izquierda_{i}", 0.0) for i in range(7)}
+            #Mover mano izquierda        
             hand_seq.send(posiciones_mano, mano="left")
 
         if posiciones_mano_der:
-            #Mover mano derecha
-            posiciones_mano = {i: posiciones_mano_der.get(f"mano_derecha_{i}", 0.0) for i in range(7)}
+            #Mover mano derecha            
             hand_seq.send(posiciones_mano, mano="right")
 
         time.sleep(duracion)  # Esperar la duración del paso
