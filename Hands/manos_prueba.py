@@ -260,8 +260,8 @@ def main():
 
     hand_seq = HandSequence() #Control de manos
 
-    hand_seq.freeze_and_release() #Congelar la mano antes de iniciar
-    seq.freeze_and_release_a() #Congelar el brazo antes de iniciar
+    #hand_seq.freeze_and_release() #Congelar la mano antes de iniciar
+    #seq.freeze_and_release_a() #Congelar el brazo antes de iniciar
 
     q_anterior = None #Posición anterior del brazo, para interpolación
 
