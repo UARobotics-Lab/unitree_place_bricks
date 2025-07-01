@@ -91,12 +91,12 @@ class HandSequence:
             msg.motor_cmd[i].kp = self.kp
             msg.motor_cmd[i].kd = self.kd
 
-    def send(self, posiciones: dict, mano: str ):
+    def send_left(self, posiciones: dict ):
         
         """Posicionnes: dict con claves int (índices de motores) y valores float (posiciones deseadas)(indices 0-6) y valores en radianes.
             Mano: str, "left" o "right" para especificar la mano a controlar.
         """
-        if mano == "left":
+        """ if mano == "left":
             msg = self.msg_left
             publisher= self.publisher
 
@@ -106,18 +106,30 @@ class HandSequence:
 
         else:
             raise ValueError("Mano debe ser 'left' o 'right'")
+ """
+        for i in range(self.num_motors):
+            msg.motor_cmd[i].q=posiciones.get(i,0.0)
+            mode = (i & 0x0F) | ((0x01 & 0x07) << 4) #id + status
+            msg.motor_cmd[i].mode = mode
+            msg.motor_cmd[i].dq = 0.0
+            msg.motor_cmd[i].tau = 0.0
+            msg.motor_cmd[i].kp = self.kp
+            msg.motor_cmd[i].kd = self.kd 
+        
+        self.publisher.Write(self.msg_left)
+
+    def send_right(self, posiciones: dict ):
 
         for i in range(self.num_motors):
-            msg.motor_cmd[i].q=posiciones.get(i,0.0) # Valor por defecto si no se especifica
-        
-        publisher.Write(msg)
-
-        # Calcular CRC y enviar el mensaje
-        # msg.crc = CRC().Crc(msg)
-        """ if mano == "left":
-            self.publisher.Write(msg)
-        else:
-            self.publisher_right.Write(msg) """
+                    msg.motor_cmd[i].q=posiciones.get(i,0.0)
+                    mode = (i & 0x0F) | ((0x01 & 0x07) << 4) #id + status
+                    msg.motor_cmd[i].mode = mode
+                    msg.motor_cmd[i].dq = 0.0
+                    msg.motor_cmd[i].tau = 0.0
+                    msg.motor_cmd[i].kp = self.kp
+                    msg.motor_cmd[i].kd = self.kd 
+                
+        self.publisher_right.Write(self.msg_right)
 
     def freeze_and_release(self):
         for i in range(self.num_motors):
@@ -134,7 +146,7 @@ class HandSequence:
             self.msg_left.motor_cmd[i].kp = 0.0
             self.msg_left.motor_cmd[i].kd = 0.0
 
-        self.publisher.Write(self.msg_right) 
+        self.publisher_right.Write(self.msg_right) 
         self.publisher.Write(self.msg_left)    
 
         
@@ -238,7 +250,7 @@ def main():
 
     #Obtener los pasos del archivo JSON
     #Se espera que el JSON tenga una estructura como {"pasos": [{"posiciones":
-    pasos = data.get("pasos", [])
+    pasos = data.get("pasos", []) #Lista de pasos, cada uno con un diccionario de posiciones y duración
 
     ChannelFactoryInitialize(0, sys.argv[1]) #Inicializar el canal de comunicación DDS
     
@@ -248,7 +260,7 @@ def main():
 
     hand_seq = HandSequence() #Control de manos
 
-    hand_seq.freeze_and_release() #Congelar el brazo antes de iniciar
+    hand_seq.freeze_and_release() #Congelar la mano antes de iniciar
     seq.freeze_and_release_a() #Congelar el brazo antes de iniciar
 
     q_anterior = None #Posición anterior del brazo, para interpolación
@@ -272,11 +284,11 @@ def main():
         #Mover manos
         if posiciones_mano_izq:
             #Mover mano izquierda        
-            hand_seq.send(posiciones_mano_izq, mano="left")
+            hand_seq.send_left(posiciones_mano_izq, mano="left")
 
         if posiciones_mano_der:
             #Mover mano derecha            
-            hand_seq.send(posiciones_mano_der, mano="right")
+            hand_seq.send_right(posiciones_mano_der, mano="right")
 
         time.sleep(duracion)  # Esperar la duración del paso
 
