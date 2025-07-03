@@ -143,3 +143,26 @@ print(f"Converge: {success} | Iteraciones: {its} | Busquedas: {searches}")
 print(f"Error E: {E} | Dentro de límites: {jl_valid} | Tiempo total: {t:.4f}s")
  """
 print("\n🎉 Prueba finalizada.")
+
+from swift import Swift
+
+# Inicia Swift para visualización
+env= Swift() #Crea un entorno de visualización
+env.launch(reload=True)  # Lanza la ventana de visualización
+
+# Carga el robot en Swift
+env.add(robot, "aura_robot")  # Añade el robot Aura al entorno
+
+# Muestra la configuración inicial del robot
+robot.q = robot.qr  # Configuración inicial
+env.step()  # Actualiza la visualización
+
+input("Presiona Enter para mostrar solucion con NR...")
+# Muestra la solución de IK con NR
+robot.q = q_NR[0]  # Usa la primera solución de NR
+env.step()  # Actualiza la visualización
+input("Presiona Enter para mostrar solucion con LM...")
+# Muestra la solución de IK con LM  
+robot.q = q_LM[0]  # Usa la primera solución de LM
+env.step()  # Actualiza la visualización
+print("Visualización completa. Cierra la ventana de Swift para finalizar.")
