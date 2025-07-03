@@ -2,15 +2,15 @@
 aura_test.py
 
 Este script:
-- Carga tu robot Aura (brazo) desde URDF.
+- Carga Aura (brazo) desde URDF.
 - Verifica la cadena ETS generada.
 - Prueba la cinemática directa (FK).
 - Prueba la IK de la Toolbox interna.
-- Prueba TU solver NR personalizado (desde aura_ik_methods.py).
+- Prueba solver NR personalizado (desde aura_ik_methods.py).
 
-Asegúrate de:
-- Tener aura_ik_methods.py en la misma carpeta.
-- Haber activado tu entorno conda: conda activate dktutorial
+Es necesario:
+- Tener IK.py en la misma carpeta.
+- Haber activado entorno conda: conda activate dktutorial
 """
 
 # --- Librerías base ---
@@ -20,7 +20,7 @@ import numpy as np
 from roboticstoolbox.robot.ETS import ETS
 
 # --- Importa tu clase ---
-from IK import NR  # O LM, QP según quieras probar
+from IK import NR, LM_Chan  # metodos de IK personalizados
 
 #Monkey patch para reescribir el método eval de ETS
 def robust_solve(self, Tep, q0=None):
@@ -65,7 +65,7 @@ import os
 
 #  Ruta al URDF del robot Aura
 urdf_path = os.path.abspath("g1_dual_arm_copy.urdf")
-print("📁 Usando URDF:", urdf_path)
+print(" Usando URDF:", urdf_path)
 
 robot = Robot.URDF(urdf_path)
 
@@ -79,13 +79,9 @@ print(f"Grados de libertad: {robot.n}")
 
 # ---  Ver ETS ---
 ets = robot.ets(end="right_rubber_hand")
-print("ETS generado:")
-print(ets)
-
-#Forzamos jindices a tipo entero para evitar problemas con el solver
-ets.jindices = np.array(ets.jindices, dtype=int)
-
-print(" jindices:", ets.jindices)
+ets.jindices = np.array(ets.jindices, dtype=int)#Forzamos jindices a tipo entero para evitar problemas con el solver
+print(f"ETS: {ets}")
+print(" jindices: {ets.jindices}")
 
 # --- FK simple con configuración por defecto ---
 Te_fk = ets.eval(robot.qr)
@@ -96,20 +92,41 @@ print(Te_fk)
 T_goal = SE3(0.5, 0.2, 0.3)  #  Pose deseada 
 print(f"Pose objetivo:\n{T_goal}")
 
-# ---  IK usando NR ---
-# Genera semilla de búsqueda
+# ---  Solver de IK usando NR ---
+# Genera inicio de búsqueda
+np.random.seed(42)  # Para reproducibilidad
+# Crea un punto de partida aleatorio para el solver
+solver_NR = NR(pinv=True, ilimit=30, slimit=30)
+q0=np.random.uniform(-1, 1, (solver_NR.slimit, robot.n))  # 30 intentos de inicio aleatorio
 
-solver = NR(pinv=True, ilimit=30, slimit=50)
-q0 = np.tile(robot.qr, (solver.slimit, 1))  
+#q0 = np.tile(robot.qr, (solver.slimit, 1))  
 
-print(f"\n🔍 Probando TU solver: {solver.name}")
+print(f"\n Probando solver NR: {solver_NR.name}")
 
+q_NR, success_NR, its_NR, searches_NR, E_NR, jl_valid_NR, t_NR = solver_NR.solve(ets, T_goal.A, q0)
+print(" IK con NR:")
+print(f"q: {q_NR}")
+print(f"FK del resultado NR: {ets.eval(q_NR)}")
+print(f"Converge: {success_NR} | Iteraciones: {its_NR} | Busquedas: {searches_NR}")
+print(f"Error E: {E_NR} | Dentro de límites: {jl_valid_NR} | Tiempo total: {t_NR:.4f}s")
+
+# ---  Solver de IK usando LM ---
+solver_LM = LM_Chan(ilimit=30, slimit=30)
+print(f"\n Probando solver LM: {solver_LM.name}")
+# Crea un punto de partida aleatorio para el solver
+
+q_LM, success_LM, its_LM, searches_LM, E_LM, jl_valid_LM, t_LM = solver_LM.solve(ets, T_goal.A, q0)
+print(" IK con LM:")
+print(f"q: {q_LM}")
+print(f"FK del resultado LM: {ets.eval(q_LM)}")
+print(f"Converge: {success_LM} | Iteraciones: {its_LM} | Busquedas: {searches_LM}")
+print(f"Error E: {E_LM} | Dentro de límites: {jl_valid_LM} | Tiempo total: {t_LM:.4f}s")
 
 # Toolbox solver interno (prueba base)
 #q_toolbox, success, _ = robot.ikine_LM(T_goal)
-q_custom, success, _, _, _,_, _ = solver.solve(ets, T_goal.A, q0)
-print(" Mi ETS.solve:", ETS.solve)
-print(" ets.solve:", ets.solve)
+#q_custom, success, _, _, _,_, _ = solver.solve(ets, T_goal.A, q0)
+#print(" Mi ETS.solve:", ETS.solve)
+#print(" ets.solve:", ets.solve)
 
 """ print(" IK toolbox:")
 print(f"q: {q_toolbox}")
@@ -117,12 +134,12 @@ print(f"FK del resultado toolbox: {robot.fkine(q_toolbox)}") """
 
 
 
-q_custom, success, its, searches, E, jl_valid, t = solver.solve(ets, T_goal.A, q0)
+#q_custom, success, its, searches, E, jl_valid, t = solver.solve(ets, T_goal.A, q0)
 
-print("✅ IK con TU NR:")
-print(f"q: {q_custom}")
+#print("✅ IK con TU NR:")
+""" print(f"q: {q_custom}")
 print(f"FK del resultado NR: {ets.eval(q_custom)}")
 print(f"Converge: {success} | Iteraciones: {its} | Busquedas: {searches}")
 print(f"Error E: {E} | Dentro de límites: {jl_valid} | Tiempo total: {t:.4f}s")
-
+ """
 print("\n🎉 Prueba finalizada.")
