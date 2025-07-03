@@ -1,0 +1,30 @@
+{
+  "nombre_rutina": "manos_ejemplos.txt",
+  "fecha_creacion": "2025-06-28 03:53:12",
+  "numero_pasos": 1,
+  "pasos": [
+    {
+      "nombre": "Paso 1",
+      "posiciones": {
+        "mano_izq_0": 0.0,
+        "mano_izq_1": 0.0,
+        "mano_izq_2": 0.0,
+        "mano_izq_3": 0.0,
+        "mano_izq_4": 0.0,
+        "mano_izq_5": 0.0,
+        "mano_izq_6": 0.0,
+        "mano_der_0": 1,
+        "mano_der_1": -0.12698504328727722,
+        "mano_der_2": -1.4073978662490845,
+        "mano_der_3": 1.5148547887802124,
+        "mano_der_4": 0.983010470867157,
+        "mano_der_5": 1.241276502609253,
+        "mano_der_6": 1.6703790426254272,
+        "12": 0.0,
+        "13": 0.0,
+        "14": 0.0
+      },
+      "duracion": 2.0
+    }
+  ]
+}

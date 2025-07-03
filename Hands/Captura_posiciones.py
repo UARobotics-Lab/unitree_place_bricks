@@ -3,17 +3,17 @@ import time
 import math
 import json
 from datetime import datetime
+
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize, ChannelSubscriber
 from unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowState_
 
 import numpy as np
 from enum import IntEnum
 import time
-import os
+#import os
 import sys
 import threading
 from multiprocessing import Process, shared_memory, Array, Lock
-
 
 # Importando las clases necesarias para el manejo de mensajes y canales
 from unitree_sdk2py.core.channel import ChannelPublisher, ChannelSubscriber, ChannelFactoryInitialize # dds
@@ -60,12 +60,8 @@ class G1JointIndex:
     RightWristYaw = 28
    
     kNotUsedJoint = 29
-<<<<<<< HEAD
-## VERIFICAR SI ESTO ES CORRECTO
-    #Manos
-=======
+
 """ 
->>>>>>> 03db1ee2148cd3b172e59fccb5c31ebf50e06e35
     LeftHandThumb0=30
     LeftHandThumb1=31
     LeftHandThumb2=32
@@ -101,87 +97,62 @@ MIRROR_MAP = {
 
 id_a_nombre = {v: k for k, v in G1JointIndex.__dict__.items() if not k.startswith('__') and not callable(v)}
 
-def control_process(self, left_hand_array, right_hand_array, left_hand_state_array, right_hand_state_array,
-                              dual_hand_data_lock = None, dual_hand_state_array = None, dual_hand_action_array = None):
-       self.running = True
+#Control de manos y dedos del robot Unitree Dex3-1
+class Dex3_1_Reader: 
+    def __init__(self):
+        self.left_hand_state = None
+        self.right_hand_state = None
+        self.first_update = False
+        self.left_ready = False
+        self.right_ready = False
+    def init(self): 
+        #Crear los suscriptores para los estados de las posiciones de las manos actuales 
+       
+        # LeftHandState_subscriber
+        self.LeftHandState_subscriber = ChannelSubscriber("rt/dex3/left/state", HandState_)
+        self.LeftHandState_subscriber.Init(self.left_hand_state_callback, 10)
+        
+        # RightHandState_subscriber
+        self.RightHandState_subscriber = ChannelSubscriber("rt/dex3/right/state", HandState_)
+        self.RightHandState_subscriber.Init(self.right_hand_state_callback, 10)
 
-       left_q_target  = np.full(Dex3_Num_Motors, 0)
-       right_q_target = np.full(Dex3_Num_Motors, 0)
+    #Funciones de callback para los estados de las manos    
+    def left_hand_state_callback(self, msg: HandState_):
+        self.left_hand_state = msg
+        self.left_ready = True
+        if self.right_ready:
+            self.first_update = True
 
-       q = 0.0
-       dq = 0.0
-       tau = 0.0
-       kp = 1.5
-       kd = 0.2
+    def right_hand_state_callback(self, msg: HandState_):
+        self.right_hand_state = msg
+        self.right_ready = True
+        if self.left_ready:
+            self.first_update = True
 
-        # initialize dex3-1's left hand cmd msg
-       self.left_msg  = unitree_hg_msg_dds__HandCmd_()
-       for id in Dex3_1_Left_JointIndex:
-           ris_mode = self._RIS_Mode(id = id, status = 0x01)
-           motor_mode = ris_mode._mode_to_uint8()
-           self.left_msg.motor_cmd[id].mode = motor_mode
-           self.left_msg.motor_cmd[id].q    = q
-           self.left_msg.motor_cmd[id].dq   = dq
-           self.left_msg.motor_cmd[id].tau  = tau
-           self.left_msg.motor_cmd[id].kp   = kp
-           self.left_msg.motor_cmd[id].kd   = kd
+    #Loop de actualización de los estados de las manos
+    def update_loop(self):
+        import time
+        while not (self.left_ready and self.right_ready):
+            time.sleep(0.01)
+            print("[Dex3_1_Reader] Lectura de estado de las manos incializada...")
+        while True:
+            time.sleep(0.05) #20 Hz
 
-       # initialize dex3-1's right hand cmd msg
-       self.right_msg = unitree_hg_msg_dds__HandCmd_()
-       for id in Dex3_1_Right_JointIndex:
-           ris_mode = self._RIS_Mode(id = id, status = 0x01)
-           motor_mode = ris_mode._mode_to_uint8()
-           self.right_msg.motor_cmd[id].mode = motor_mode  
-           self.right_msg.motor_cmd[id].q    = q
-           self.right_msg.motor_cmd[id].dq   = dq
-           self.right_msg.motor_cmd[id].tau  = tau
-           self.right_msg.motor_cmd[id].kp   = kp
-           self.right_msg.motor_cmd[id].kd   = kd  
+    #Obtener posiciones de las manos
+    # Esta función devuelve un diccionario con las posiciones de las manos
+    def get_hand_positions(self):
+        if not (self.left_ready and self.right_ready):
+            return None
+        
+        left_q = [m.q for m in self.left_hand_state.motor_state]
+        right_q = [m.q for m in self.right_hand_state.motor_state]
 
-       try:
-           while self.running:
-               start_time = time.time()
-               # get dual hand state
-               left_hand_mat  = np.array(left_hand_array[:]).reshape(25, 3).copy()
-               right_hand_mat = np.array(right_hand_array[:]).reshape(25, 3).copy()
-
-               # Read left and right q_state from shared arrays
-               state_data = np.concatenate((np.array(left_hand_state_array[:]), np.array(right_hand_state_array[:])))
-
-               if not np.all(right_hand_mat == 0.0) and not np.all(left_hand_mat[4] == np.array([-1.13, 0.3, 0.15])): # if hand data has been initialized.
-                   ref_left_value = left_hand_mat[unitree_tip_indices]
-                   ref_right_value = right_hand_mat[unitree_tip_indices]
-                   ref_left_value[0] = ref_left_value[0] * 1.15
-                   ref_left_value[1] = ref_left_value[1] * 1.05
-                   ref_left_value[2] = ref_left_value[2] * 0.95
-                   ref_right_value[0] = ref_right_value[0] * 1.15
-                   ref_right_value[1] = ref_right_value[1] * 1.05
-                   ref_right_value[2] = ref_right_value[2] * 0.95
-
-                   left_q_target  = self.hand_retargeting.left_retargeting.retarget(ref_left_value)[self.hand_retargeting.right_dex_retargeting_to_hardware]
-                   right_q_target = self.hand_retargeting.right_retargeting.retarget(ref_right_value)[self.hand_retargeting.right_dex_retargeting_to_hardware]
-
-               # get dual hand action
-               action_data = np.concatenate((left_q_target, right_q_target))    
-               if dual_hand_state_array and dual_hand_action_array:
-                   with dual_hand_data_lock:
-                       dual_hand_state_array[:] = state_data
-                       dual_hand_action_array[:] = action_data
-
-               self.ctrl_dual_hand(left_q_target, right_q_target)
-               current_time = time.time()
-               time_elapsed = current_time - start_time
-               sleep_time = max(0, (1 / self.fps) - time_elapsed)
-               time.sleep(sleep_time)
-       finally:
-           print("Dex3_1_Controller has been closed.")
-
-
-
-
-
-
-
+        return {
+            "left": left_q,
+            "right": right_q
+        }
+    
+#Controlador de brazos y cintura del robot Unitree G1
 class ArmStateReader:
     def __init__(self):
         self.low_state = None
@@ -342,21 +313,33 @@ def grabar_modo_3(reader, pasos, contador):
     print(f"Duración asignada: {pasos[-1]['duracion']} segundos")
     return contador + 1
 
-#NUEVO
-def grabar_modo_4(reader, pasos, contador):
-    pos_izq = reader.get_joint_positions(MANO_IZQ)
+#Manos
+def grabar_modo_4(reader, pasos, contador, manos):
+    print(f"\nCapturando paso {contador} en modo 4 (manos → brazos → cintura)...")
+
+    estado_manos = manos.get_hand_positions()
+    if estado_manos is None:
+        print("Error: No se pudieron obtener las posiciones de las manos.")
+        return contador
+    
+    pos_izq = {f"mano_izq_{i}": val for i, val in enumerate(estado_manos["left"])}
+    
+
     paso = {
         "nombre": f"Paso {contador}",
         "posiciones": pos_izq,
         "duracion": 0
     }
+    
     pasos.append(paso)
-    vista_previa_parcial("MANO izquierda", pos_izq, contador - 1)
 
+    vista_previa_parcial("Mano izquierda", pos_izq, contador - 1)
+    
     input(f"Captura brazo derecho para paso {contador}. Enter para continuar...")
-    pos_der = reader.get_joint_positions(MANO_DER)
+    
+    pos_der = {f"mano_der_{i}": val for i, val in enumerate(estado_manos["right"])}
     pasos[-1]["posiciones"].update(pos_der)
-    vista_previa_parcial("Mano derecho", pos_der, contador - 1)
+    vista_previa_parcial("Mano derecha", pos_der, contador - 1)
 
     grabar_cintura = input("¿Capturar cintura para este paso? [s/n]: ").strip().lower()
     if grabar_cintura == 's':
@@ -506,6 +489,8 @@ def duplicar_paso(pasos, contador):
 
 
 def main():
+    
+      
     if len(sys.argv) < 2:
         print(f"Uso: python3 {sys.argv[0]} <interfaz_red>")
         sys.exit(1)
@@ -513,6 +498,10 @@ def main():
     ChannelFactoryInitialize(0, sys.argv[1])
     reader = ArmStateReader()
     reader.init()
+
+    manos = Dex3_1_Reader()
+    manos.init()
+
 
     print("Esperando conexión con el robot...")
     while not reader.first_update:
@@ -543,7 +532,7 @@ def main():
         elif modo == '3':
             contador = grabar_modo_3(reader, pasos, contador)
         elif modo == '4':
-            contador = grabar_modo_4(reader, pasos, contador)
+            contador = grabar_modo_4(reader, pasos, contador, manos)
         elif modo == 'r':
             contador = repetir_pasos(pasos, contador)
         elif modo == 'd':
