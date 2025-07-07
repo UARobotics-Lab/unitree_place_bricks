@@ -324,7 +324,6 @@ def grabar_modo_4(reader, pasos, contador, manos):
     
     # pos_izq = {f"mano_izq_{i}": val for i, val in enumerate(estado_manos["left"])}
     
-
     # paso = {
     #     "nombre": f"Paso {contador}",
     #     "posiciones": pos_izq,
@@ -338,6 +337,14 @@ def grabar_modo_4(reader, pasos, contador, manos):
     input(f"Captura brazo derecho para paso {contador}. Enter para continuar...")
     
     pos_der = {f"mano_der_{i}": val for i, val in enumerate(estado_manos["right"])}
+    paso = {
+        "nombre": f"Paso {contador}",
+        "posiciones": pos_der,
+        "duracion": 0
+    }
+    
+    #pasos.append(paso)
+
     pasos[-1]["posiciones"].update(pos_der)
     vista_previa_parcial("Mano derecha", pos_der, contador - 1)
 
