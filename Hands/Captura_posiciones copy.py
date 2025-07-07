@@ -339,28 +339,28 @@ def grabar_modo_3(reader, pasos, contador):
 #     return contador + 1
 
 def grabar_modo_4(reader, pasos, contador):
-    print("\n--- Modo 4: Captura de mano y brazo ---")
+    # print("\n--- Modo 4: Captura de mano y brazo ---")
     
     # Primero capturamos la mano
-    print("\nCapturando posición de la MANO izquierda...")
-    pos_izq = reader.get_joint_positions(MANO_IZQ)
-    vista_previa_parcial("mano izquierda", pos_izq, contador - 1)
+    # print("\nCapturando posición de la MANO izquierda...")
+    # pos_izq = reader.get_joint_positions(MANO_IZQ)
+    # vista_previa_parcial("mano izquierda", pos_izq, contador - 1)
     
     # Preguntar si se desea capturar el brazo también
-    capturar_brazo = input("¿Desea capturar también la posición del BRAZO izquierdo? [s/n]: ").strip().lower()
-    pos_izq = {}
+    # capturar_brazo = input("¿Desea capturar también la posición del BRAZO izquierdo? [s/n]: ").strip().lower()
+    # pos_izq = {}
 
-    if capturar_brazo == 's':
-        pos_izq = reader.get_joint_positions(BRAZO_IZQ)
-        vista_previa_parcial("brazo izquierdo", pos_izq, contador - 1)
+    # if capturar_brazo == 's':
+    #     pos_izq = reader.get_joint_positions(BRAZO_IZQ)
+    #     vista_previa_parcial("brazo izquierdo", pos_izq, contador - 1)
 
-    else:
-            pos_izq = {j: pasos[-1]['posiciones'].get(j, 0.0) for j in BRAZO_IZQ}
-            print("\nUsando posiciones anteriores de brazo izquierda:")
-            vista_previa_parcial("brazo izquierda (anteriores)", pos_izq, contador - 1)
+    # else:
+    #     pos_izq = {j: pasos[-1]['posiciones'].get(j, 0.0) for j in BRAZO_IZQ}
+    #     print("\nUsando posiciones anteriores de brazo izquierda:")
+    #     vista_previa_parcial("brazo izquierda (anteriores)", pos_izq, contador - 1)
     
     # Mano derecha
-    input("\nCapturar MANO derecha. Enter para continuar...")
+    input("\n Capturar MANO derecha. Enter para continuar...")
     pos_der = reader.get_joint_positions(MANO_DER)
     vista_previa_parcial("mano derecha", pos_der, contador - 1)
     
@@ -372,12 +372,13 @@ def grabar_modo_4(reader, pasos, contador):
         pos_der = reader.get_joint_positions(BRAZO_DER)
         vista_previa_parcial("brazo derecho", pos_der, contador - 1)
     else:
-            pos_der = {j: pasos[-1]['posiciones'].get(j, 0.0) for j in BRAZO_DER}
-            print("\nUsando posiciones anteriores de brazo derecho:")
-            vista_previa_parcial("brazo derecha (anteriores)", pos_der, contador - 1)
+        pos_der = {j: pasos[-1]['posiciones'].get(j, 0.0) for j in BRAZO_DER}
+        print("\nUsando posiciones anteriores de brazo derecho:")
+        vista_previa_parcial("brazo derecha (anteriores)", pos_der, contador - 1)
 
     # Combinar todas las posiciones
-    posiciones_completas = {**pos_izq, **pos_izq, **pos_der, **pos_der}
+    #posiciones_completas = {**pos_izq, **pos_izq, **pos_der, **pos_der}
+    posiciones_completas = {**pos_der, **pos_der}
     
     # Preguntar por la cintura
     grabar_cintura = input("¿Capturar cintura para este paso? [s/n]: ").strip().lower()
@@ -561,7 +562,7 @@ def main():
         print("  1: Grabar todos los motores.")
         print("  2: Capturar brazo izquierdo → derecho → cintura opcional.")
         print("  3: Capturar brazo izquierdo y generar espejo derecho.")
-        print("  4: Capturar mano izquierda → derecho → cintura opcional..")
+        print("  4: Captura de mano → brazo opcional → cintura opcional..")
         print("  r: Repetir últimos pasos.")
         print("  d: Duplicar un paso específico.")
         print("  m: Modificar un paso existente.")
