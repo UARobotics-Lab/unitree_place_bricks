@@ -309,6 +309,42 @@ def grabar_modo_3(reader, pasos, contador):
     print(f"Duración asignada: {pasos[-1]['duracion']} segundos")
     return contador + 1
 
+#Manos
+def grabar_modo_4(reader, pasos, contador, manos):
+    print(f"\nCapturando paso {contador} en modo 4 (solo brazo derecho → cintura)...")
+
+    estado_manos = manos.get_hand_positions()
+    if estado_manos is None:
+        print("Error: No se pudieron obtener las posiciones de las manos.")
+        return contador
+
+    input(f"Captura brazo derecho para paso {contador}. Presiona Enter para continuar...")
+
+    pos_der = {f"mano_der_{i}": val for i, val in enumerate(estado_manos["right"])}
+
+    paso = {
+        "nombre": f"Paso {contador}",
+        "posiciones": pos_der,
+        "duracion": 0
+    }
+
+    pasos.append(paso)
+    vista_previa_parcial("Mano derecha", pos_der, contador - 1)
+
+    grabar_cintura = input("¿Capturar cintura para este paso? [s/n]: ").strip().lower()
+    if grabar_cintura == 's':
+        pos_cintura = reader.get_joint_positions(CINTURA)
+        pasos[-1]["posiciones"].update(pos_cintura)
+        vista_previa_parcial("cintura", pos_cintura, contador - 1)
+    else:
+        for j in CINTURA:
+            pasos[-1]["posiciones"][j] = 0.0
+
+    pasos[-1]["duracion"] = solicitar_duracion()
+    print(f"Duración asignada: {pasos[-1]['duracion']} segundos")
+    return contador + 1
+
+
 #NUEVO
 # def grabar_modo_4(reader, pasos, contador,manos):
 #     pos_izq = reader.get_joint_positions(MANO_IZQ)
@@ -338,7 +374,7 @@ def grabar_modo_3(reader, pasos, contador):
 #     print(f"Duración asignada: {pasos[-1]['duracion']} segundos")
 #     return contador + 1
 
-def grabar_modo_4(reader, pasos, contador):
+# def grabar_modo_4(reader, pasos, contador):
     # print("\n--- Modo 4: Captura de mano y brazo ---")
     
     # Primero capturamos la mano
@@ -359,52 +395,52 @@ def grabar_modo_4(reader, pasos, contador):
     #     print("\nUsando posiciones anteriores de brazo izquierda:")
     #     vista_previa_parcial("brazo izquierda (anteriores)", pos_izq, contador - 1)
     
-    # Mano derecha
-    input("\n Capturar MANO derecha. Enter para continuar...")
-    pos_der = reader.get_joint_positions(MANO_DER)
-    vista_previa_parcial("mano derecha", pos_der, contador - 1)
+    # # Mano derecha
+    # input("\n Capturar MANO derecha. Enter para continuar...")
+    # pos_der = reader.get_joint_positions(MANO_DER)
+    # vista_previa_parcial("mano derecha", pos_der, contador - 1)
     
-     # Preguntar si se desea capturar el brazo también
-    capturar_brazo = input("¿Desea capturar también la posición del BRAZO derecho [s/n]: ").strip().lower()
-    pos_der = {}
-    if capturar_brazo == 's':
-        input("Preparado para capturar BRAZO derecho. Enter para continuar...")
-        pos_der = reader.get_joint_positions(BRAZO_DER)
-        vista_previa_parcial("brazo derecho", pos_der, contador - 1)
-    else:
-        pos_der = {j: pasos[-1]['posiciones'].get(j, 0.0) for j in BRAZO_DER}
-        print("\nUsando posiciones anteriores de brazo derecho:")
-        vista_previa_parcial("brazo derecha (anteriores)", pos_der, contador - 1)
+    #  # Preguntar si se desea capturar el brazo también
+    # capturar_brazo = input("¿Desea capturar también la posición del BRAZO derecho [s/n]: ").strip().lower()
+    # pos_der = {}
+    # if capturar_brazo == 's':
+    #     input("Preparado para capturar BRAZO derecho. Enter para continuar...")
+    #     pos_der = reader.get_joint_positions(BRAZO_DER)
+    #     vista_previa_parcial("brazo derecho", pos_der, contador - 1)
+    # else:
+    #     pos_der = {j: pasos[-1]['posiciones'].get(j, 0.0) for j in BRAZO_DER}
+    #     print("\nUsando posiciones anteriores de brazo derecho:")
+    #     vista_previa_parcial("brazo derecha (anteriores)", pos_der, contador - 1)
 
-    # Combinar todas las posiciones
-    #posiciones_completas = {**pos_izq, **pos_izq, **pos_der, **pos_der}
-    posiciones_completas = {**pos_der, **pos_der}
+    # # Combinar todas las posiciones
+    # #posiciones_completas = {**pos_izq, **pos_izq, **pos_der, **pos_der}
+    # posiciones_completas = {**pos_der, **pos_der}
     
-    # Preguntar por la cintura
-    grabar_cintura = input("¿Capturar cintura para este paso? [s/n]: ").strip().lower()
-    if grabar_cintura == 's':
-        pos_cintura = reader.get_joint_positions(CINTURA)
-        posiciones_completas.update(pos_cintura)
-        vista_previa_parcial("cintura", pos_cintura, contador - 1)
+    # # Preguntar por la cintura
+    # grabar_cintura = input("¿Capturar cintura para este paso? [s/n]: ").strip().lower()
+    # if grabar_cintura == 's':
+    #     pos_cintura = reader.get_joint_positions(CINTURA)
+    #     posiciones_completas.update(pos_cintura)
+    #     vista_previa_parcial("cintura", pos_cintura, contador - 1)
     
-    # Asignar duración
-    dur = solicitar_duracion()
+    # # Asignar duración
+    # dur = solicitar_duracion()
     
-    pasos[-1]["duracion"] = solicitar_duracion()
-    print(f"Duración asignada: {pasos[-1]['duracion']} segundos")
-    #return contador + 1
+    # pasos[-1]["duracion"] = solicitar_duracion()
+    # print(f"Duración asignada: {pasos[-1]['duracion']} segundos")
+    # #return contador + 1
 
-    # Crear el paso
-    paso = {
-    "nombre": f"Paso {contador} (Mano y brazo)",
-    "posiciones": posiciones_completas,
-    "duracion": dur
-    }
+    # # Crear el paso
+    # paso = {
+    # "nombre": f"Paso {contador} (Mano y brazo)",
+    # "posiciones": posiciones_completas,
+    # "duracion": dur
+    # }
 
-    pasos.append(paso)
-    print(f"\nPaso {contador} guardado con éxito. Duración: {dur} segundos")
+    # pasos.append(paso)
+    # print(f"\nPaso {contador} guardado con éxito. Duración: {dur} segundos")
     
-    return contador + 1
+    # return contador + 1
 
 def repetir_pasos(pasos, contador):
     try:
@@ -562,7 +598,7 @@ def main():
         print("  1: Grabar todos los motores.")
         print("  2: Capturar brazo izquierdo → derecho → cintura opcional.")
         print("  3: Capturar brazo izquierdo y generar espejo derecho.")
-        print("  4: Captura de mano → brazo opcional → cintura opcional..")
+        print("  4: Captura de mano mano,  brazo opcional → cintura opcional..")
         print("  r: Repetir últimos pasos.")
         print("  d: Duplicar un paso específico.")
         print("  m: Modificar un paso existente.")
