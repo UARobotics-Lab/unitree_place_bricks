@@ -14,12 +14,12 @@ Es necesario:
 """
 
 # --- Librerías base ---
-import roboticstoolbox as rtb # Asegúrate de tener instalada la versión correcta
+import roboticstoolbox as rtb 
 
 import numpy as np
 from roboticstoolbox.robot.ETS import ETS
 
-# --- Importa tu clase ---
+# --- Importar la clase ---
 from IK import NR, LM_Chan  # metodos de IK personalizados
 
 #Monkey patch para reescribir el método eval de ETS
@@ -56,6 +56,7 @@ def robust_solve(self, Tep, q0=None):
 
 ETS.solve = robust_solve   
 print(" Método eval de ETS modificado para usar jindices como enteros.")
+#ETS: Elementary Transformation Sequence-> Cadena cinematica usando transformaciones elementales
 
 from roboticstoolbox import Robot
 from spatialmath import SE3
@@ -64,7 +65,7 @@ import os
 #from roboticstoolbox import Robot
 
 #  Ruta al URDF del robot Aura
-urdf_path = os.path.abspath("g1_dual_arm_copy.urdf")
+urdf_path = os.path.abspath("g1_dual_arm_copy.urdf") #URDF modificado para Aura
 print(" Usando URDF:", urdf_path)
 
 robot = Robot.URDF(urdf_path)
@@ -75,10 +76,15 @@ print("Configuracion  (qr) definida:", robot.qr)
 
 
 print(" Robot Aura cargado.")
-print(f"Grados de libertad: {robot.n}")
+print(f"Grados de libertad: {robot.n}") #En este caso, 7 DOF del brazo de Aura
+
+print(f"link base del robot :{robot.base_link}")  # Muestra el nombre del link raíz
+
+print(robot.fkine(robot.qr))  # FK en la pose neutral
+
 
 # ---  Ver ETS ---
-ets = robot.ets(end="right_rubber_hand")
+ets = robot.ets(end="left_rubber_hand")
 ets.jindices = np.array(ets.jindices, dtype=int)#Forzamos jindices a tipo entero para evitar problemas con el solver
 print(f"ETS: {ets}")
 print(" jindices: {ets.jindices}")
@@ -89,7 +95,7 @@ print(" FK de configuración por defecto (qr):")
 print(Te_fk)
 
 # --- IK usando toolbox integrada ---
-T_goal = SE3(0.5, 0.2, 0.3)  #  Pose deseada 
+T_goal = SE3(0.0, 0.2, 0.0)  #  Pose deseada a la que llegara en este caso left_rubber_hand
 print(f"Pose objetivo:\n{T_goal}")
 
 # ---  Solver de IK usando NR ---
@@ -116,6 +122,12 @@ print(f"\n Probando solver LM: {solver_LM.name}")
 # Crea un punto de partida aleatorio para el solver
 
 q_LM, success_LM, its_LM, searches_LM, E_LM, jl_valid_LM, t_LM = solver_LM.solve(ets, T_goal.A, q0)
+
+# --- Guardar q_LM ---
+np.save("q_LM_result.npy", q_LM)
+print("q_LM guardado en archivo q_LM_result.npy")
+
+
 print(" IK con LM:")
 print(f"q: {q_LM}")
 print(f"FK del resultado LM: {ets.eval(q_LM)}")
@@ -136,16 +148,17 @@ print(f"FK del resultado toolbox: {robot.fkine(q_toolbox)}") """
 
 #q_custom, success, its, searches, E, jl_valid, t = solver.solve(ets, T_goal.A, q0)
 
-#print("✅ IK con TU NR:")
+#print(" IK con TU NR:")
 """ print(f"q: {q_custom}")
 print(f"FK del resultado NR: {ets.eval(q_custom)}")
 print(f"Converge: {success} | Iteraciones: {its} | Busquedas: {searches}")
 print(f"Error E: {E} | Dentro de límites: {jl_valid} | Tiempo total: {t:.4f}s")
  """
-print("\n🎉 Prueba finalizada.")
+print("\n Prueba finalizada.")
 
-from swift import Swift
 
+""" from swift import Swift """
+""" 
 # Inicia Swift para visualización
 env= Swift() #Crea un entorno de visualización
 env.launch(reload=True)  # Lanza la ventana de visualización
@@ -165,4 +178,4 @@ input("Presiona Enter para mostrar solucion con LM...")
 # Muestra la solución de IK con LM  
 robot.q = q_LM[0]  # Usa la primera solución de LM
 env.step()  # Actualiza la visualización
-print("Visualización completa. Cierra la ventana de Swift para finalizar.")
+print("Visualización completa. Cierra la ventana de Swift para finalizar.") """

@@ -54,7 +54,7 @@ class IK(ABC):
         name: str = "IK Solver",
         ilimit: int = 30,
         slimit: int = 100,
-        tol: float = 1e-6,
+        tol: float = 1e-6, #tolerancia de error
         we: np.ndarray = np.ones(6),
         problems: int = 1000,
         reject_jl: bool = True,
@@ -173,7 +173,7 @@ class IK(ABC):
         e: angle-axis error (ndarray in R^6)
         E: The quadratic error weighted by We
         """
-        e = rtb.angle_axis(Te, Tep)
+        e = rtb.angle_axis(Te, Tep) #Tep: Tgoal pose, Te: current pose
         E = 0.5 * e @ self.We @ e
 
         return e, E
