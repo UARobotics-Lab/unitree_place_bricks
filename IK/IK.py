@@ -54,7 +54,8 @@ class IK(ABC):
         name: str = "IK Solver",
         ilimit: int = 30,
         slimit: int = 100,
-        tol: float = 1e-6, #tolerancia de error
+        tol_min: float = 1e-6, 
+        tol_max: float = 1e-4,  #tolerancia de error
         we: np.ndarray = np.ones(6),
         problems: int = 1000,
         reject_jl: bool = True,
@@ -81,7 +82,8 @@ class IK(ABC):
         self.name = name
         self.slimit = int(slimit)
         self.ilimit = int(ilimit)
-        self.tol = tol
+        self.tol_min = tol_min
+        self.tol_max = tol_max
         self.We = np.diag(we)
         self.reject_jl = reject_jl
         self.λΣ = λΣ
@@ -124,24 +126,57 @@ class IK(ABC):
         total_i = 0
         total_t = 0.0
 
+        q_steps = [] #Se guarda cada paso de q para visualización
+        
         for search in range(self.slimit):
             q = q0[search].copy()
+            E0=None
             
             while i <= self.ilimit:
                 i += 1
+                         
 
+              """   #Calcular tolerancia dinamica 
+                
+
+                #Verificación de tolerancia
+                print(f"Iteración {i}, Error: {E}, Tolerancia dinámica: {tol_dynamic}")
+                if E < tol_dynamic:
+                    # Wrap q to be within +- 180 deg
+                    # If your robot has larger than 180 deg range on a joint
+                    # this line should be modified in incorporate the extra range
+                    q = (q + np.pi) % (2 * np.pi) - np.pi
+
+                    # Check if we have violated joint limits
+                    jl_valid = self.check_jl(ets, q)
+
+                    if not jl_valid and self.reject_jl:
+                        # Abandon search and try again
+                        break
+                    else:
+                        return q, True, total_i + i, search + 1, E, jl_valid, total_t, np.array(q_steps)
+                    
+ """
                 # Attempt a step
                 try:
                     t, E, q = self.step(ets, Tep, q)
 
                     # Acclumulate total time
                     total_t += t
+                    q_steps.append(q.copy())  # Guardar el paso actual de q
                 except np.linalg.LinAlgError:
                     # Abandon search and try again
                     break
+            
+                if E0 is None:
+                    E0 = E  # Initialize E0 on the first iteration
+
+                #Calculate dynamic tolerance  
+                tol_dynamic = self.tol_min + (self.tol_max - self.tol_min) * (E / E0)
+                tol_dynamic = max(tol_dynamic, self.tol_min)  # Ensure it does not go below the minimum tolerance
 
                 # Check if we have arrived
-                if E < self.tol:
+                if E < tol_dynamic:
 
                     # Wrap q to be within +- 180 deg
                     # If your robot has larger than 180 deg range on a joint
@@ -155,13 +190,13 @@ class IK(ABC):
                         # Abandon search and try again
                         break
                     else:
-                        return q, True, total_i + i, search + 1, E, jl_valid, total_t
+                        return q, True, total_i + i, search + 1, E, jl_valid, total_t, np.array(q_steps)
 
             total_i += i
             i = 0
 
         # If we make it here, then we have failed
-        return q, False, np.nan, np.nan, E, np.nan, np.nan
+        return q, False, np.nan, np.nan, E, np.nan, np.nan , np.array(q_steps)
 
     def error(self, Te: np.ndarray, Tep: np.ndarray):
         """
