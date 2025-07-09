@@ -102,26 +102,32 @@ print(f"Pose objetivo:\n{T_goal}")
 # Genera inicio de búsqueda
 np.random.seed(42)  # Para reproducibilidad
 # Crea un punto de partida aleatorio para el solver
-solver_NR = NR(pinv=True, ilimit=30, slimit=30)
+solver_NR = NR(pinv=True, ilimit=30, slimit=30, tol_min=1e-6, tol_max=1e-3)
 q0=np.random.uniform(-1, 1, (solver_NR.slimit, robot.n))  # 30 intentos de inicio aleatorio
 
 #q0 = np.tile(robot.qr, (solver.slimit, 1))  
 
 print(f"\n Probando solver NR: {solver_NR.name}")
 
-q_NR, success_NR, its_NR, searches_NR, E_NR, jl_valid_NR, t_NR = solver_NR.solve(ets, T_goal.A, q0)
+q_NR, success_NR, its_NR, searches_NR, E_NR, jl_valid_NR, t_NR, q_steps_NR = solver_NR.solve(ets, T_goal.A, q0)
 print(" IK con NR:")
 print(f"q: {q_NR}")
 print(f"FK del resultado NR: {ets.eval(q_NR)}")
 print(f"Converge: {success_NR} | Iteraciones: {its_NR} | Busquedas: {searches_NR}")
 print(f"Error E: {E_NR} | Dentro de límites: {jl_valid_NR} | Tiempo total: {t_NR:.4f}s")
 
+
+#Pasos de q para llegar a la solución
+print(f"Pasos generados: {q_steps_NR.shape}")
+print(q_steps_NR) 
+
+
 # ---  Solver de IK usando LM ---
-solver_LM = LM_Chan(ilimit=30, slimit=30)
+solver_LM = LM_Chan(ilimit=30, slimit=30, tol_min=1e-6, tol_max=1e-3)
 print(f"\n Probando solver LM: {solver_LM.name}")
 # Crea un punto de partida aleatorio para el solver
 
-q_LM, success_LM, its_LM, searches_LM, E_LM, jl_valid_LM, t_LM = solver_LM.solve(ets, T_goal.A, q0)
+q_LM, success_LM, its_LM, searches_LM, E_LM, jl_valid_LM, t_LM, q_steps_LM = solver_LM.solve(ets, T_goal.A, q0)
 
 # --- Guardar q_LM ---
 np.save("q_LM_result.npy", q_LM)
@@ -133,6 +139,11 @@ print(f"q: {q_LM}")
 print(f"FK del resultado LM: {ets.eval(q_LM)}")
 print(f"Converge: {success_LM} | Iteraciones: {its_LM} | Busquedas: {searches_LM}")
 print(f"Error E: {E_LM} | Dentro de límites: {jl_valid_LM} | Tiempo total: {t_LM:.4f}s")
+
+
+#Pasos de q para llegar a la solución
+print(f"Pasos generados: {q_steps_LM.shape}")
+print(q_steps_LM)
 
 # Toolbox solver interno (prueba base)
 #q_toolbox, success, _ = robot.ikine_LM(T_goal)
