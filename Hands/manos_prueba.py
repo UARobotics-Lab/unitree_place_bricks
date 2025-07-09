@@ -229,21 +229,21 @@ class ArmSequence:
             time.sleep(self.control_dt)
 
    """  def freeze_and_release_a(self):
-       for joint in self.arm_joints:
-           self.low_cmd.motor_cmd[joint].q = self.low_state.motor_state[joint].q
-           self.low_cmd.motor_cmd[joint].dq = 0.0
-           self.low_cmd.motor_cmd[joint].tau = 0.0
-           self.low_cmd.motor_cmd[joint].kp = 0.0
-           self.low_cmd.motor_cmd[joint].kd = 0.0
-       self.low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q = 0
-       self.low_cmd.crc = self.crc.Crc(self.low_cmd)
-       self.publisher.Write(self.low_cmd)
- """
+           for joint in self.arm_joints:
+            self.low_cmd.motor_cmd[joint].q = self.low_state.motor_state[joint].q
+            self.low_cmd.motor_cmd[joint].dq = 0.0
+            self.low_cmd.motor_cmd[joint].tau = 0.0
+            self.low_cmd.motor_cmd[joint].kp = 0.0
+            self.low_cmd.motor_cmd[joint].kd = 0.0
+        self.low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q = 0
+        self.low_cmd.crc = self.crc.Crc(self.low_cmd)
+        self.publisher.Write(self.low_cmd)
+    """
 
-def main():
+def ejecucion(ruta_archivo_txt):
     if len(sys.argv) < 2: #Si no hay argumentos, salir
         sys.exit()
-    ruta_archivo_txt = ruta # RUTA DE LA RUTINA, definido en la parte superior del script
+    # ruta_archivo_txt = ruta # RUTA DE LA RUTINA, definido en la parte superior del script
 
     #Apertura del archivo JSON
     try:
@@ -297,7 +297,7 @@ def main():
         time.sleep(duracion)  # Esperar la duración del paso
 
    """  seq.freeze_and_release_a()  # Congelar el brazo al final
-    hand_seq.freeze_and_release()  # Congelar el brazo al final """
+        hand_seq.freeze_and_release()  # Congelar el brazo al final """
 
 if __name__ == "__main__":
     main()
