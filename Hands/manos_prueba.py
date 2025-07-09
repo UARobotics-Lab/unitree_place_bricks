@@ -1,5 +1,5 @@
 #RUTA DE LA RUTINA
-ruta="BrazoMano.txt"
+ruta="recoger.txt"
 
 import sys
 import time
@@ -93,6 +93,7 @@ class HandSequence:
 
     def send_left(self, posiciones: dict ):
         msg= self.msg_left
+        
         
         """Posicionnes: dict con claves int (índices de motores) y valores float (posiciones deseadas)(indices 0-6) y valores en radianes.
             Mano: str, "left" o "right" para especificar la mano a controlar.
@@ -242,10 +243,10 @@ class ArmSequence:
 #Funciones de ejecución de la rutina
 
 
-def ejecucion(ruta_archivo_txt):
+def main():
     if len(sys.argv) < 2: #Si no hay argumentos, salir
         sys.exit()
-    ruta_archivo_txt = ruta # RUTA DE LA RUTINA, definido en la parte superior del script
+    # ruta_archivo_txt = ruta # RUTA DE LA RUTINA, definido en la parte superior del script
 
     #Apertura del archivo JSON
     try:
