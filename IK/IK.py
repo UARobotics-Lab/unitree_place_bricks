@@ -136,27 +136,7 @@ class IK(ABC):
                 i += 1
                          
 
-              """   #Calcular tolerancia dinamica 
-                
-
-                #Verificación de tolerancia
-                print(f"Iteración {i}, Error: {E}, Tolerancia dinámica: {tol_dynamic}")
-                if E < tol_dynamic:
-                    # Wrap q to be within +- 180 deg
-                    # If your robot has larger than 180 deg range on a joint
-                    # this line should be modified in incorporate the extra range
-                    q = (q + np.pi) % (2 * np.pi) - np.pi
-
-                    # Check if we have violated joint limits
-                    jl_valid = self.check_jl(ets, q)
-
-                    if not jl_valid and self.reject_jl:
-                        # Abandon search and try again
-                        break
-                    else:
-                        return q, True, total_i + i, search + 1, E, jl_valid, total_t, np.array(q_steps)
-                    
- """
+            
                 # Attempt a step
                 try:
                     t, E, q = self.step(ets, Tep, q)
