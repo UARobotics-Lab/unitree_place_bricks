@@ -239,7 +239,10 @@ class ArmSequence:
        self.publisher.Write(self.low_cmd)
  """
 
-def main():
+#Funciones de ejecución de la rutina
+
+
+def ejecucion(ruta_archivo_txt):
     if len(sys.argv) < 2: #Si no hay argumentos, salir
         sys.exit()
     ruta_archivo_txt = ruta # RUTA DE LA RUTINA, definido en la parte superior del script
@@ -297,6 +300,22 @@ def main():
 
 """     seq.freeze_and_release_a()  # Congelar el brazo al final
     hand_seq.freeze_and_release()  # Congelar el brazo al final
+    
  """
+
+
+
+def main():
+
+    if len(sys.argv) < 2:
+        print("Uso: python manos_prueba.py <ruta_al_archivo_json>")
+        sys.exit(1)
+
+    ruta_archivo_txt = sys.argv[1]  # Ruta al archivo JSON con los pasos
+
+    ejecucion(ruta_archivo_txt)  # Ejecutar la rutina con los pasos del archivo JSON
+
+
+
 if __name__ == "__main__":
     main()
