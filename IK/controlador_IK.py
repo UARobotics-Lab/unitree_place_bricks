@@ -1,35 +1,16 @@
-#RUTA DE LA RUTINA
-ruta="BrazoMano.txt"
-
 import sys
 import time
 import math
-import json
-
 import numpy as np
-from enum import IntEnum
-import time
-#import os
-import sys
-import threading
-from multiprocessing import Process, shared_memory, Array, Lock
 
-# Importando las clases necesarias para el manejo de mensajes y canales
-from unitree_sdk2py.core.channel import ChannelPublisher, ChannelSubscriber, ChannelFactoryInitialize # dds
-from unitree_sdk2py.idl.unitree_hg.msg.dds_ import HandCmd_, HandState_                               # idl
-from unitree_sdk2py.idl.default import unitree_hg_msg_dds__HandCmd_
-
-# for gripper
-from unitree_sdk2py.core.channel import ChannelPublisher, ChannelSubscriber, ChannelFactoryInitialize # dds
-from unitree_sdk2py.idl.unitree_go.msg.dds_ import MotorCmds_, MotorStates_                           # idl
-from unitree_sdk2py.idl.default import unitree_go_msg_dds__MotorCmd_
-
-from unitree_sdk2py.core.channel import ChannelFactoryInitialize, ChannelPublisher, ChannelSubscriber
-from unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowCmd_, LowState_ 
-from unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowCmd_
+from unitree_sdk2py.core.channel import ChannelPublisher, ChannelSubscriber, ChannelFactoryInitialize
+from unitree_sdk2py.idl.unitree_hg.msg.dds_ import HandCmd_, HandState_, LowCmd_, LowState_
+from unitree_sdk2py.idl.default import unitree_hg_msg_dds__HandCmd_, unitree_hg_msg_dds__LowCmd_
 from unitree_sdk2py.utils.crc import CRC
 from unitree_sdk2py.utils.thread import RecurrentThread
 
+
+# === Índices de articulaciones ===
 class G1JointIndex:
     LeftHipPitch = 0
     LeftHipRoll = 1
@@ -62,20 +43,20 @@ class G1JointIndex:
     RightWristYaw = 28
     kNotUsedJoint = 29
 
+
+# === Control de la mano ===
 class HandSequence:
     def __init__(self):
-        self.publisher = ChannelPublisher("rt/dex3/left/cmd", HandCmd_)
-        self.publisher.Init()
+        self.publisher_left = ChannelPublisher("rt/dex3/left/cmd", HandCmd_)
+        self.publisher_left.Init()
         self.publisher_right = ChannelPublisher("rt/dex3/right/cmd", HandCmd_)
         self.publisher_right.Init()
 
-
-        #Inicializar mensajes de comando
         self.msg_left = unitree_hg_msg_dds__HandCmd_()
         self.msg_right = unitree_hg_msg_dds__HandCmd_()
 
-        self.num_motors = 7  # Número de motores en cada mano 
-        self.kp= 1.5
+        self.num_motors = 7
+        self.kp = 1.5
         self.kd = 0.2
 
         self._init_msg(self.msg_left)
@@ -83,76 +64,52 @@ class HandSequence:
 
     def _init_msg(self, msg):
         for i in range(self.num_motors):
-            mode = (i & 0x0F) | ((0x01 & 0x07) << 4) #id + status
+            mode = (i & 0x0F) | ((0x01 & 0x07) << 4)
             msg.motor_cmd[i].mode = mode
-            #msg.motor_cmd[i].q = 0.0
             msg.motor_cmd[i].dq = 0.0
             msg.motor_cmd[i].tau = 0.0
             msg.motor_cmd[i].kp = self.kp
             msg.motor_cmd[i].kd = self.kd
 
-    def send_left(self, posiciones: dict ):
-        msg= self.msg_left
-        
-        """Posicionnes: dict con claves int (índices de motores) y valores float (posiciones deseadas)(indices 0-6) y valores en radianes.
-            Mano: str, "left" o "right" para especificar la mano a controlar.
-        """
-        """ if mano == "left":
-            msg = self.msg_left
-            publisher= self.publisher
-
-        elif mano == "right":
-            msg = self.msg_right
-            publisher = self.publisher_right
-
-        else:
-            raise ValueError("Mano debe ser 'left' o 'right'")
- """
+    def send_left(self, posiciones: dict):
+        msg = self.msg_left
         for i in range(self.num_motors):
-            msg.motor_cmd[i].q=posiciones.get(i,0.0)
-            mode = (i & 0x0F) | ((0x01 & 0x07) << 4) #id + status
+            msg.motor_cmd[i].q = posiciones.get(i, 0.0)
+            mode = (i & 0x0F) | ((0x01 & 0x07) << 4)
             msg.motor_cmd[i].mode = mode
             msg.motor_cmd[i].dq = 0.0
             msg.motor_cmd[i].tau = 0.0
             msg.motor_cmd[i].kp = self.kp
-            msg.motor_cmd[i].kd = self.kd 
-        
-        self.publisher.Write(self.msg_left)
+            msg.motor_cmd[i].kd = self.kd
+        self.publisher_left.Write(msg)
 
-    def send_right(self, posiciones: dict ):
-        msg= self.msg_right
-            
-
+    def send_right(self, posiciones: dict):
+        msg = self.msg_right
         for i in range(self.num_motors):
-                    msg.motor_cmd[i].q=posiciones.get(i,0.0)
-                    mode = (i & 0x0F) | ((0x01 & 0x07) << 4) #id + status
-                    msg.motor_cmd[i].mode = mode
-                    msg.motor_cmd[i].dq = 0.0
-                    msg.motor_cmd[i].tau = 0.0
-                    msg.motor_cmd[i].kp = self.kp
-                    msg.motor_cmd[i].kd = self.kd 
-                
-        self.publisher_right.Write(self.msg_right)
+            msg.motor_cmd[i].q = posiciones.get(i, 0.0)
+            mode = (i & 0x0F) | ((0x01 & 0x07) << 4)
+            msg.motor_cmd[i].mode = mode
+            msg.motor_cmd[i].dq = 0.0
+            msg.motor_cmd[i].tau = 0.0
+            msg.motor_cmd[i].kp = self.kp
+            msg.motor_cmd[i].kd = self.kd
+        self.publisher_right.Write(msg)
 
     def freeze_and_release(self):
         for i in range(self.num_motors):
-            self.msg_right.motor_cmd[i].q = 0
-            self.msg_right.motor_cmd[i].dq = 0.0
-            self.msg_right.motor_cmd[i].tau = 0.0
-            self.msg_right.motor_cmd[i].kp = 0.0
-            self.msg_right.motor_cmd[i].kd = 0.0
-
-        for i in range(self.num_motors):
-            self.msg_left.motor_cmd[i].q = 0
-            self.msg_left.motor_cmd[i].dq = 0.0
-            self.msg_left.motor_cmd[i].tau = 0.0
+            self.msg_left.motor_cmd[i].q = 0.0
             self.msg_left.motor_cmd[i].kp = 0.0
             self.msg_left.motor_cmd[i].kd = 0.0
 
-        self.publisher_right.Write(self.msg_right) 
-        self.publisher.Write(self.msg_left)    
+            self.msg_right.motor_cmd[i].q = 0.0
+            self.msg_right.motor_cmd[i].kp = 0.0
+            self.msg_right.motor_cmd[i].kd = 0.0
 
-        
+        self.publisher_left.Write(self.msg_left)
+        self.publisher_right.Write(self.msg_right)
+
+
+# === Control del brazo ===
 class ArmSequence:
     def __init__(self):
         self.control_dt = 0.02
@@ -166,16 +123,12 @@ class ArmSequence:
         self.first_update = False
         self.target_pos = {}
         self.q_init_override = None
+
         self.arm_joints = [
             G1JointIndex.LeftShoulderPitch, G1JointIndex.LeftShoulderRoll,
             G1JointIndex.LeftShoulderYaw, G1JointIndex.LeftElbow,
             G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
             G1JointIndex.LeftWristYaw,
-            G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
-            G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
-            G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
-            G1JointIndex.RightWristYaw,
-            G1JointIndex.WaistYaw, G1JointIndex.WaistRoll, G1JointIndex.WaistPitch
         ]
 
     def Init(self):
@@ -196,8 +149,21 @@ class ArmSequence:
             self.first_update = True
 
     def interpolate_position(self, q_init, q_target):
-        ratio = (1 - math.cos(math.pi * (self.t / self.T))) / 2 if self.t < self.T else 1.0
-        return q_init + (q_target - q_init) * ratio
+        """
+        Perfil polinómico de 5to grado para movimiento suave.
+        """
+        if self.t >= self.T:
+            s = 1.0
+        else:
+            s = self.t / self.T
+
+        s3 = s ** 3
+        s4 = s3 * s
+        s5 = s4 * s
+
+        s_quintic = 10 * s3 - 15 * s4 + 6 * s5
+
+        return q_init + (q_target - q_init) * s_quintic
 
     def LowCmdWrite(self):
         if self.low_state is None:
@@ -219,7 +185,7 @@ class ArmSequence:
         self.publisher.Write(self.low_cmd)
         self.t += self.control_dt
 
-    def move_to(self, updates: dict, duration=1.25, q_init_override=None):
+    def move_to(self, updates: dict, duration=1.5, q_init_override=None):
         self.target_pos.update(updates)
         self.T = duration
         self.t = 0.0
@@ -228,75 +194,53 @@ class ArmSequence:
             time.sleep(self.control_dt)
 
     def freeze_and_release_a(self):
-       for joint in self.arm_joints:
-           self.low_cmd.motor_cmd[joint].q = self.low_state.motor_state[joint].q
-           self.low_cmd.motor_cmd[joint].dq = 0.0
-           self.low_cmd.motor_cmd[joint].tau = 0.0
-           self.low_cmd.motor_cmd[joint].kp = 0.0
-           self.low_cmd.motor_cmd[joint].kd = 0.0
-       self.low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q = 0
-       self.low_cmd.crc = self.crc.Crc(self.low_cmd)
-       self.publisher.Write(self.low_cmd)
+        for joint in self.arm_joints:
+            self.low_cmd.motor_cmd[joint].q = self.low_state.motor_state[joint].q
+            self.low_cmd.motor_cmd[joint].kp = 0.0
+            self.low_cmd.motor_cmd[joint].kd = 0.0
+
+        self.low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q = 0
+        self.low_cmd.crc = self.crc.Crc(self.low_cmd)
+        self.publisher.Write(self.low_cmd)
 
 
+# === Bloque principal ===
 def main():
-    if len(sys.argv) < 2: #Si no hay argumentos, salir
-        sys.exit()
-    ruta_archivo_txt = ruta # RUTA DE LA RUTINA, definido en la parte superior del script
+    ChannelFactoryInitialize(0, sys.argv[1])  # Init DDS
 
-    #Apertura del archivo JSON
-    try:
-        with open(ruta_archivo_txt, 'r') as f:
-            data = json.load(f)
-    except:
-        sys.exit()
-
-    #Obtener los pasos del archivo JSON
-    #Se espera que el JSON tenga una estructura como {"pasos": [{"posiciones":
-    pasos = data.get("pasos", []) #Lista de pasos, cada uno con un diccionario de posiciones y duración
-
-    ChannelFactoryInitialize(0, sys.argv[1]) #Inicializar el canal de comunicación DDS
-    
-    seq = ArmSequence() #Control de brazo y cintura
+    seq = ArmSequence()
     seq.Init()
     seq.Start()
 
-    hand_seq = HandSequence() #Control de manos
+    hand_seq = HandSequence()
 
-    #hand_seq.freeze_and_release() #Congelar la mano antes de iniciar
-    #seq.freeze_and_release_a() #Congelar el brazo antes de iniciar
+    # === Carga tus pasos calculados ===
+    # Por ejemplo, q_steps = np.load("q_steps.npy")
+    # O pásalos directo como variable global si lanzas desde otro script
+    q_steps = np.load("q_steps.npy")  # <-- Ejemplo si los guardaste
 
-    q_anterior = None #Posición anterior del brazo, para interpolación
+    print(f"Ejecutando {len(q_steps)} pasos del camino calculado...")
 
-    for paso in pasos:
-        #Obtener las posiciones y duración del paso actual
-        posiciones = paso.get("posiciones", {})
-        duracion = paso.get("duracion", 1.25) #Si no se especifica duración, usar 1.25 segundos
+    T_total = 3.0  # Segundos total
+    T_step = T_total / len(q_steps)
 
-        #Dividir las posiciones: brazo/cintura (int), manos (str)
-        posiciones_brazo = {int(k): v for k, v in posiciones.items() if isinstance(k, int) or k.isdigit()}
-        posiciones_mano_izq = {int(k.split('_')[-1]): v for k, v in posiciones.items() if isinstance(k, str) and k.startswith("mano_izq") }
-        posiciones_mano_der = {int(k.split('_')[-1]): v for k, v in posiciones.items() if isinstance(k, str) and k.startswith("mano_der")}
+    arm_joints = [
+        G1JointIndex.LeftShoulderPitch, G1JointIndex.LeftShoulderRoll,
+        G1JointIndex.LeftShoulderYaw, G1JointIndex.LeftElbow,
+        G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
+        G1JointIndex.LeftWristYaw,
+    ]
 
-        #Mover brazo y cintura
-        if posiciones_brazo:
-            #Mover brazo y cintura
-            seq.move_to(posiciones_brazo, duration=duracion, q_init_override=q_anterior)
-            q_anterior = posiciones_brazo
+    q_anterior = None
 
-        #Mover manos
-        if posiciones_mano_izq:
-            #Mover mano izquierda        
-            hand_seq.send_left(posiciones_mano_izq)
+    for q in q_steps:
+        posiciones_brazo = {joint_idx: q[i] for i, joint_idx in enumerate(arm_joints)}
+        seq.move_to(posiciones_brazo, duration=T_step, q_init_override=q_anterior)
+        q_anterior = posiciones_brazo
 
-        if posiciones_mano_der:
-            #Mover mano derecha            
-            hand_seq.send_right(posiciones_mano_der)
+    seq.freeze_and_release_a()
+    hand_seq.freeze_and_release()
 
-        time.sleep(duracion)  # Esperar la duración del paso
-
-    seq.freeze_and_release_a()  # Congelar el brazo al final
-    hand_seq.freeze_and_release()  # Congelar el brazo al final
 
 if __name__ == "__main__":
     main()
