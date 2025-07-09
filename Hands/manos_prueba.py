@@ -296,8 +296,8 @@ def main():
 
         time.sleep(duracion)  # Esperar la duración del paso
 
-    seq.freeze_and_release_a()  # Congelar el brazo al final
-    hand_seq.freeze_and_release()  # Congelar el brazo al final
+   """  seq.freeze_and_release_a()  # Congelar el brazo al final
+    hand_seq.freeze_and_release()  # Congelar el brazo al final """
 
 if __name__ == "__main__":
     main()
