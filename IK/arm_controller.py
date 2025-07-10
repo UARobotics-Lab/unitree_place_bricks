@@ -205,7 +205,7 @@ def main():
 
     # === Carga pasos calculados ===
     
-    q_steps = np.load("q_steps.npy")  # Cargar pasos desde un archivo .npy
+    q_steps = np.load("q_steps_LM.npy")  # Cargar pasos de LM desde un archivo .npy
 
     print(f"Ejecutando {len(q_steps)} pasos con control manual...")
 
