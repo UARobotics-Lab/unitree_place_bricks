@@ -272,7 +272,7 @@ def centro_derecha():
 
     }
 
-    print("Posición desde derecha al centro:", pos_aura)
+    print("Torso orientado a la derecha:", pos_aura)
 
     return pos_aura
 
@@ -301,8 +301,13 @@ def derecha_centro():
         G1JointIndex.RightWristRoll: 0.0,
         G1JointIndex.RightWristPitch: 0.0,
         G1JointIndex.RightWristYaw: 0.0,
+        G1JointIndex.RightHipPitch: 0.0,
+        G1JointIndex.WaistYaw: 0.0, 
+        G1JointIndex.WaistRoll: 0.0, 
+        G1JointIndex.WaistPitch: 0.0,
+
     }
-    print("Posición desde derecha al centro:", pos_aura)
+    print("Posición central:", pos_aura)
        
     return pos_aura
 
@@ -331,9 +336,16 @@ def centro_izquierda():
         G1JointIndex.RightWristRoll: 0.0,
         G1JointIndex.RightWristPitch: 0.0,
         G1JointIndex.RightWristYaw: 0.0,
-    
+        G1JointIndex.RightHipPitch: 0.0,
+        G1JointIndex.WaistYaw: 1.54, 
+        G1JointIndex.WaistRoll: 0.0, 
+        G1JointIndex.WaistPitch: 0.0,
+ 
     
     }
+
+    print("Torso orientado a la izquierda:", pos_aura)
+
     return pos_aura
 
 def izquierda_centro():
@@ -360,25 +372,23 @@ def izquierda_centro():
         G1JointIndex.RightWristRoll: 0.0,
         G1JointIndex.RightWristPitch: 0.0,
         G1JointIndex.RightWristYaw: 0.0,
+        G1JointIndex.RightHipPitch: 0.0,
+        G1JointIndex.WaistYaw: 0.0, 
+        G1JointIndex.WaistRoll: 0.0, 
+        G1JointIndex.WaistPitch: 0.0,
+
+    
     }
+    print("Posición central:", pos_aura)
+    
     return pos_aura
 
 
 def main():
+
     if len(sys.argv) < 2: #Si no hay argumentos, salir
         sys.exit()
-    ruta_archivo_txt = ruta # RUTA DE LA RUTINA, definido en la parte superior del script
-
-    #Apertura del archivo JSON
-    try:
-        with open(ruta_archivo_txt, 'r') as f:
-            data = json.load(f)
-    except:
-        sys.exit()
-
-    #Obtener los pasos del archivo JSON
-    #Se espera que el JSON tenga una estructura como {"pasos": [{"posiciones":
-    pasos = data.get("pasos", []) #Lista de pasos, cada uno con un diccionario de posiciones y duración
+       
 
     ChannelFactoryInitialize(0, sys.argv[1]) #Inicializar el canal de comunicación DDS
     
@@ -386,75 +396,32 @@ def main():
     seq.Init()
     seq.Start()
 
-    hand_seq = HandSequence() #Control de manos
+    #hand_seq = HandSequence() #Control de manos
 
-    #hand_seq.freeze_and_release() #Congelar la mano antes de iniciar
-    #seq.freeze_and_release_a() #Congelar el brazo antes de iniciar
+    print("\nRutina de cintura por pasos.")
+    print(" 1: Centro → Derecha")
+    print(" 2: Derecha → Centro")
+    print(" 3: Centro → Izquierda")
+    print(" 4: Izquierda → Centro")
+    print(" 5: Salir")
 
-    q_anterior = None #Posición anterior del brazo, para interpolación
+    modo = input("Ingrese el modo de ejecución (1-4): ")
 
-    for paso in pasos:
-        #Obtener las posiciones y duración del paso actual
-        posiciones = paso.get("posiciones", {})
-        duracion = paso.get("duracion", 1.25) #Si no se especifica duración, usar 1.25 segundos
+    if modo == "1":
+        pos_aura = centro_derecha()
+    elif modo == "2":
+        pos_aura = derecha_centro()
+    elif modo == "3":
+        pos_aura = centro_izquierda()
+    elif modo == "4":
+        pos_aura = izquierda_centro()
+    elif modo == "5":
+        sys.exit()
+    else:
+        print("Modo no válido. Saliendo...")
 
-        #Dividir las posiciones: brazo/cintura (int), manos (str)
-        posiciones_brazo = {int(k): v for k, v in posiciones.items() if isinstance(k, int) or k.isdigit()}
-        posiciones_mano_izq = {int(k.split('_')[-1]): v for k, v in posiciones.items() if isinstance(k, str) and k.startswith("mano_izq") }
-        posiciones_mano_der = {int(k.split('_')[-1]): v for k, v in posiciones.items() if isinstance(k, str) and k.startswith("mano_der")}
-
-        #Mover brazo y cintura
-        if posiciones_brazo:
-            #Mover brazo y cintura
-            seq.move_to(posiciones_brazo, duration=duracion, q_init_override=q_anterior)
-            q_anterior = posiciones_brazo
-
-        #Mover manos
-        if posiciones_mano_izq:
-            #Mover mano izquierda        
-            hand_seq.send_left(posiciones_mano_izq)
-
-        if posiciones_mano_der:
-            #Mover mano derecha            
-            hand_seq.send_right(posiciones_mano_der)
-
-        time.sleep(duracion)  # Esperar la duración del paso
-
-"""     seq.freeze_and_release_a()  # Congelar el brazo al final
-    hand_seq.freeze_and_release()  # Congelar el brazo al final
+    seq.move_to(pos_aura, duration=2.0)  # Mover a la posición deseada
     
- """
-print("\nRutina de cintura por pasos.")
-print(" 1: Mover torso del centro a la derecha (posición inicial L2+B)")
-print(" 2: Mover torso de la derecha al centro")
-print(" 3: Mover torso del centro a la izquierda (posición inicial L2+B)")
-print(" 4: Mover torso de la izquierda al centro")
-print(" 5: Salir")
-
-modo = input("Ingrese el modo de ejecución (1-4): ")
-
-seq = ArmSequence()  # Control de brazo y cintura
-seq.Init()
-seq.Start()
-
-if modo == "1":
-    pos_aura = centro_derecha()
-elif modo == "2":
-    pos_aura = derecha_centro()
-elif modo == "3":
-    pos_aura = centro_izquierda()
-elif modo == "4":
-    pos_aura = izquierda_centro()
-elif modo == "5":
-    sys.exit()
-else:
-    print("Modo no válido. Saliendo...")
-
-seq.move_to(pos_aura, duration=2.0)  # Mover a la posición deseada
-    
-
-
-
 
 if __name__ == "__main__":
     main()
