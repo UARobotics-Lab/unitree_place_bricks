@@ -265,7 +265,15 @@ def centro_derecha():
         G1JointIndex.RightWristRoll: 0.0,
         G1JointIndex.RightWristPitch: 0.0,
         G1JointIndex.RightWristYaw: 0.0,
+        G1JointIndex.RightHipPitch: 0.0,
+        G1JointIndex.WaistYaw: -1.54, 
+        G1JointIndex.WaistRoll: 0.0, 
+        G1JointIndex.WaistPitch: 0.0,
+
     }
+
+    print("Posición desde derecha al centro:", pos_aura)
+
     return pos_aura
 
 def derecha_centro():
@@ -275,7 +283,7 @@ def derecha_centro():
       y de allí se mueve a la posición deseada (en este caso, al centro del robot).
     """
     print("Moviendo brazo y mano derecha al centro... ")
-    pos_aura_1 = {
+    pos_aura = {
         G1JointIndex.LeftShoulderPitch: 0.0,
         G1JointIndex.LeftShoulderRoll: 0.0,
         G1JointIndex.LeftShoulderYaw: 0.0,
@@ -294,27 +302,8 @@ def derecha_centro():
         G1JointIndex.RightWristPitch: 0.0,
         G1JointIndex.RightWristYaw: 0.0,
     }
-    pos_aura_2 = {
-        G1JointIndex.LeftShoulderPitch: 0.0,
-         G1JointIndex.LeftShoulderRoll: 0.0,
-        G1JointIndex.LeftShoulderYaw: 0.0,
-        G1JointIndex.LeftElbow: 0.0,
-        G1JointIndex.LeftWristRoll: 0.0,
-        G1JointIndex.LeftWristPitch: 0.0,
-        G1JointIndex.LeftWristYaw: 0.0,
-        G1JointIndex.WaistYaw: 0.0,
-        G1JointIndex.WaistRoll: 0.0,
-        G1JointIndex.WaistPitch: 0.0,
-        G1JointIndex.RightShoulderPitch: 0.0,
-        G1JointIndex.RightShoulderRoll: 0.0,
-        G1JointIndex.RightShoulderYaw: 0.0,
-        G1JointIndex.RightElbow: 0.0,
-        G1JointIndex.RightWristRoll: 0.0,
-        G1JointIndex.RightWristPitch: 0.0,
-        G1JointIndex.RightWristYaw: 0.0,
-
-    }
-    
+    print("Posición desde derecha al centro:", pos_aura)
+       
     return pos_aura
 
 def centro_izquierda():
@@ -342,6 +331,8 @@ def centro_izquierda():
         G1JointIndex.RightWristRoll: 0.0,
         G1JointIndex.RightWristPitch: 0.0,
         G1JointIndex.RightWristYaw: 0.0,
+    
+    
     }
     return pos_aura
 
@@ -373,7 +364,7 @@ def izquierda_centro():
     return pos_aura
 
 
-def ejecucion(ruta_archivo_txt):
+def main():
     if len(sys.argv) < 2: #Si no hay argumentos, salir
         sys.exit()
     ruta_archivo_txt = ruta # RUTA DE LA RUTINA, definido en la parte superior del script
@@ -433,18 +424,35 @@ def ejecucion(ruta_archivo_txt):
     hand_seq.freeze_and_release()  # Congelar el brazo al final
     
  """
+print("\nRutina de cintura por pasos.")
+print(" 1: Mover torso del centro a la derecha (posición inicial L2+B)")
+print(" 2: Mover torso de la derecha al centro")
+print(" 3: Mover torso del centro a la izquierda (posición inicial L2+B)")
+print(" 4: Mover torso de la izquierda al centro")
+print(" 5: Salir")
 
+modo = input("Ingrese el modo de ejecución (1-4): ")
 
+seq = ArmSequence()  # Control de brazo y cintura
+seq.Init()
+seq.Start()
 
-def main():
+if modo == "1":
+    pos_aura = centro_derecha()
+elif modo == "2":
+    pos_aura = derecha_centro()
+elif modo == "3":
+    pos_aura = centro_izquierda()
+elif modo == "4":
+    pos_aura = izquierda_centro()
+elif modo == "5":
+    sys.exit()
+else:
+    print("Modo no válido. Saliendo...")
 
-    if len(sys.argv) < 2:
-        print("Uso: python manos_prueba.py <ruta_al_archivo_json>")
-        sys.exit(1)
+seq.move_to(pos_aura, duration=2.0)  # Mover a la posición deseada
+    
 
-    ruta_archivo_txt = sys.argv[1]  # Ruta al archivo JSON con los pasos
-
-    ejecucion(ruta_archivo_txt)  # Ejecutar la rutina con los pasos del archivo JSON
 
 
 
