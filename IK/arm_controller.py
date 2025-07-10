@@ -203,12 +203,11 @@ def main():
 
     hand_seq = HandSequence()
 
-    # === Carga tus pasos calculados ===
-    # Por ejemplo, q_steps = np.load("q_steps.npy")
-    # O pásalos directo como variable global si lanzas desde otro script
-    q_steps = np.load("q_steps.npy")  # <-- Ejemplo si los guardaste
+    # === Carga pasos calculados ===
+    
+    q_steps = np.load("q_steps.npy")  # Cargar pasos desde un archivo .npy
 
-    print(f"Ejecutando {len(q_steps)} pasos del camino calculado...")
+    print(f"Ejecutando {len(q_steps)} pasos con control manual...")
 
     T_total = 3.0  # Segundos total
     T_step = T_total / len(q_steps)
@@ -222,8 +221,12 @@ def main():
 
     q_anterior = None
 
-    for q in q_steps:
-        posiciones_brazo = {joint_idx: q[i] for i, joint_idx in enumerate(arm_joints)}
+    for i, q in enumerate(q_steps):
+        posiciones_brazo = {joint_idx: q[j] for j, joint_idx in enumerate(arm_joints)}
+
+        print(f"\n Siguiente paso {i+1}/{len(q_steps)}:")
+        print(f"Posiciones (radianes): {posiciones_brazo}")
+
         seq.move_to(posiciones_brazo, duration=T_step, q_init_override=q_anterior)
         q_anterior = posiciones_brazo
 
