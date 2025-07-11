@@ -206,7 +206,10 @@ def main():
 
     # === Carga pasos calculados ===
     
-    q_steps = np.load("q_steps_LM.npy")  # Cargar pasos de LM desde un archivo .npy
+    q_steps = np.load("q_steps_LM.csv")  # Cargar pasos de LM desde un archivo .csv
+    
+    if q_steps.ndim == 1:
+        q_steps = np.expand_dims(q_steps, axis=0)  # Asegurar que es 2D
 
     print(f"Ejecutando {len(q_steps)} pasos con control manual...")
 
@@ -220,10 +223,23 @@ def main():
         G1JointIndex.LeftWristYaw,
     ]
 
+    articulaciones_activas = [0] #Posicion del joint dentro de la lista arm_joints
+
     q_anterior = None
 
-    for i, q in enumerate(q_steps):
-        posiciones_brazo = {joint_idx: q[j] for j, joint_idx in enumerate(arm_joints)}
+    for i in range(len(q_steps)):
+        q=q_steps[i] #Vector de posiciones del paso i
+
+        posiciones_brazo = {}
+
+        for j in range(len(arm_joints)):
+            joint_idx = arm_joints[j] #Asignacion de posiciones a las articulaciones
+
+            if j in articulaciones_activas:
+                posiciones_brazo[joint_idx] = q[j]
+            else:
+                # Si la articulación no está activa, mantener la posición anterior o 0.0
+                posiciones_brazo[joint_idx] = q_anterior.get(joint_idx, 0.0) if q_anterior else 0.0
 
         print(f"\n Siguiente paso {i+1}/{len(q_steps)}:")
         print(f"Posiciones (radianes): {posiciones_brazo}")
