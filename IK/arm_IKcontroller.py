@@ -222,12 +222,23 @@ def main():
         G1JointIndex.LeftWristYaw,
     ]
 
+    articulaciones_activas = [0]
+
     q_anterior = None
 
     for i in range(len(q_steps)):
         q=q_steps[i] #Vector de posiciones del paso i
 
-        posiciones_brazo = {joint_idx: q[j] for j, joint_idx in enumerate(arm_joints)}
+        posiciones_brazo = {}
+
+        for j in range(len(arm_joints)):
+            joint_idx = arm_joints[j] #Asignacion de posiciones a las articulaciones
+
+            if j in articulaciones_activas:
+                posiciones_brazo[joint_idx] = q[j]
+            else:
+                # Si la articulación no está activa, mantener la posición anterior o 0.0
+                posiciones_brazo[joint_idx] = q_anterior.get(joint_idx, 0.0) if q_anterior else 0.0
 
         print(f"\n Siguiente paso {i+1}/{len(q_steps)}:")
         print(f"Posiciones (radianes): {posiciones_brazo}")
