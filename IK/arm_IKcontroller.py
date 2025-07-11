@@ -224,7 +224,9 @@ def main():
 
     q_anterior = None
 
-    for i, q in enumerate(q_steps):
+    for i in range(len(q_steps)):
+        q=q_steps[i] #Vector de posiciones del paso i
+
         posiciones_brazo = {joint_idx: q[j] for j, joint_idx in enumerate(arm_joints)}
 
         print(f"\n Siguiente paso {i+1}/{len(q_steps)}:")
