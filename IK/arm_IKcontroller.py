@@ -207,6 +207,7 @@ def main():
     # === Carga pasos calculados ===
     
     q_steps = np.load("q_steps_LM.csv")  # Cargar pasos de LM desde un archivo .csv
+    
     if q_steps.ndim == 1:
         q_steps = np.expand_dims(q_steps, axis=0)  # Asegurar que es 2D
 
@@ -222,7 +223,7 @@ def main():
         G1JointIndex.LeftWristYaw,
     ]
 
-    articulaciones_activas = [0]
+    articulaciones_activas = [0] #Posicion del joint dentro de la lista arm_joints
 
     q_anterior = None
 
