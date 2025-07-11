@@ -227,6 +227,12 @@ def main():
         print(f"\n Siguiente paso {i+1}/{len(q_steps)}:")
         print(f"Posiciones (radianes): {posiciones_brazo}")
 
+
+        res=input("Presiona Enter para continuar, X para salir: ")
+        if res.lower() == 'x':
+            print("Proceso cancelado.")
+            break
+
         seq.move_to(posiciones_brazo, duration=T_step, q_init_override=q_anterior)
         q_anterior = posiciones_brazo
 
