@@ -140,6 +140,7 @@ class ArmSequence:
         Perfil polinómico de 5to grado para movimiento suave.
         """
         #Normalizacion del tiempo
+        
         if self.t >= self.T: #self.t es el tiempo actual, self.T es el tiempo total del movimiento
             s = 1.0
         else:
