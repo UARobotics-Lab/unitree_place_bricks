@@ -4,6 +4,7 @@ import math
 import numpy as np
 import csv
 import pandas as pd
+import json
 
 from unitree_sdk2py.core.channel import ChannelPublisher, ChannelSubscriber, ChannelFactoryInitialize
 from unitree_sdk2py.idl.unitree_hg.msg.dds_ import HandCmd_, HandState_, LowCmd_, LowState_
@@ -11,6 +12,7 @@ from unitree_sdk2py.idl.default import unitree_hg_msg_dds__HandCmd_, unitree_hg_
 from unitree_sdk2py.utils.crc import CRC
 from unitree_sdk2py.utils.thread import RecurrentThread
 
+ruta="release_arm_sdk.txt"
 archivo_csv = "q_steps_LM.csv"
 
 # === Índices de articulaciones ===
@@ -35,6 +37,7 @@ class G1JointIndex:
     WaistYaw = 12
     WaistRoll = 13
     WaistPitch = 14
+
 
 
 # === Control de la mano ===
@@ -203,6 +206,18 @@ class ArmSequence:
 
 # === Bloque principal ===
 def main():
+
+    ruta_archivo_txt = ruta
+
+    try:
+        with open(ruta_archivo_txt, 'r') as f:
+            data = json.load(f)
+    except:
+        print("error")
+        sys.exit()
+
+    pasos = data.get("pasos", [])
+
     ChannelFactoryInitialize(0, sys.argv[1])  # Init DDS
 
     seq = ArmSequence()
@@ -232,7 +247,7 @@ def main():
     ]
     
 
-    articulaciones_activas = [0] #Posicion del joint dentro de la lista arm_joints
+    articulaciones_activas = [0, 1, 2, 3, 4, 5, 6] #Posicion del joint dentro de la lista arm_joints
 
     q_anterior = None
 
@@ -258,17 +273,33 @@ def main():
         print(f"Posiciones (radianes): {posiciones_brazo}")
 
 
-        res=input("Presiona Enter para continuar, X para salir: ")
-        if res.lower() == 'x':
-            print("Proceso cancelado.")
-            break
+        # res=input("Presiona Enter para continuar, X para salir: ")
+        res= 'a'
+        
+
 
         seq.move_to(posiciones_brazo, duration=T_step, q_init_override=q_anterior)
+
+        if res.lower() == 'x' or i == (len(q_steps)-1):
+        
+            print("Proceso cancelado.")
+            for paso in pasos:
+                posiciones = {int(k): v for k, v in paso.get("posiciones", {}).items()}
+                duracion = paso.get("duracion", 1.25)
+                seq.move_to(posiciones, duration=duracion, q_init_override=q_anterior)
+                q_anterior = posiciones
+            
+            break
+
         q_anterior = posiciones_brazo
 
-    seq.freeze_and_release_a()
+
+    
+    
+    # seq.freeze_and_release_a()
     hand_seq.freeze_and_release()
 
 
 if __name__ == "__main__":
     main()
+   
