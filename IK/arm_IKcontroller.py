@@ -31,6 +31,10 @@ class G1JointIndex:
     RightWristPitch = 27
     RightWristYaw = 28
     kNotUsedJoint = 29
+    #Cintura
+    WaistYaw = 12
+    WaistRoll = 13
+    WaistPitch = 14
 
 
 # === Control de la mano ===
@@ -225,6 +229,9 @@ def main():
         G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
         G1JointIndex.LeftWristYaw,
     ]
+    waist_joints = [
+        G1JointIndex.WaistYaw, G1JointIndex.WaistRoll, G1JointIndex.WaistPitch
+    ]    
 
     articulaciones_activas = [0] #Posicion del joint dentro de la lista arm_joints
 
