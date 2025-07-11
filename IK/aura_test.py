@@ -84,7 +84,7 @@ print(robot.fkine(robot.qr))  # FK en la pose neutral
 
 
 # ---  Ver ETS ---
-ets = robot.ets(end="right_rubber_hand")
+ets = robot.ets(end="left_rubber_hand")
 ets.jindices = np.array(ets.jindices, dtype=int)#Forzamos jindices a tipo entero para evitar problemas con el solver
 print(f"ETS: {ets}")
 print(" jindices: {ets.jindices}")
