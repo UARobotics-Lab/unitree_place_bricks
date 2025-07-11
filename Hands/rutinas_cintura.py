@@ -420,7 +420,7 @@ def main():
     else:
         print("Modo no válido. Saliendo...")
 
-    seq.move_to(pos_aura, duration=2.0)  # Mover a la posición deseada
+    seq.move_to(pos_aura, duration=3.0)  # Mover a la posición deseada
     
 
 if __name__ == "__main__":
