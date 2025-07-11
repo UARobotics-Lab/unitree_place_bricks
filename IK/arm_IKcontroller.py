@@ -206,7 +206,9 @@ def main():
 
     # === Carga pasos calculados ===
     
-    q_steps = np.load("q_steps_LM.npy")  # Cargar pasos de LM desde un archivo .npy
+    q_steps = np.load("q_steps_LM.csv")  # Cargar pasos de LM desde un archivo .csv
+    if q_steps.ndim == 1:
+        q_steps = np.expand_dims(q_steps, axis=0)  # Asegurar que es 2D
 
     print(f"Ejecutando {len(q_steps)} pasos con control manual...")
 
