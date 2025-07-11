@@ -228,10 +228,9 @@ def main():
         G1JointIndex.LeftShoulderYaw, G1JointIndex.LeftElbow,
         G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
         G1JointIndex.LeftWristYaw,
+        G1JointIndex.WaistYaw, G1JointIndex.WaistRoll, G1JointIndex.WaistPitch,
     ]
-    waist_joints = [
-        G1JointIndex.WaistYaw, G1JointIndex.WaistRoll, G1JointIndex.WaistPitch
-    ]    
+    
 
     articulaciones_activas = [0] #Posicion del joint dentro de la lista arm_joints
 
@@ -250,6 +249,10 @@ def main():
             else:
                 # Si la articulación no está activa, mantener la posición anterior o 0.0
                 posiciones_brazo[joint_idx] = q_anterior.get(joint_idx, 0.0) if q_anterior else 0.0
+
+        posiciones_brazo[G1JointIndex.WaistYaw] = -1.54
+        posiciones_brazo[G1JointIndex.WaistRoll] = 0.0
+        posiciones_brazo[G1JointIndex.WaistPitch] = 0.0
 
         print(f"\n Siguiente paso {i+1}/{len(q_steps)}:")
         print(f"Posiciones (radianes): {posiciones_brazo}")
