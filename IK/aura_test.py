@@ -132,8 +132,9 @@ q_LM, success_LM, its_LM, searches_LM, E_LM, jl_valid_LM, t_LM, q_steps_LM = sol
 # --- Guardar q_LM ---
 np.save("q_LM_result.npy", q_LM)
 print("q_LM guardado en archivo q_LM_result.npy")
-np.save("q_steps_LM.npy", q_steps_LM)
-print("q_steps_LM guardado en archivo q_steps_LM.npy")
+
+np.savetxt("q_steps_LM.csv", q_steps_LM, delimiter=',')
+print("q_steps_LM guardado en archivo q_steps_LM.csv")
 
 
 print(" IK con LM:")
