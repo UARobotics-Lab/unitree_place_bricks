@@ -2,6 +2,8 @@ import sys
 import time
 import math
 import numpy as np
+import csv
+import pandas as pd
 
 from unitree_sdk2py.core.channel import ChannelPublisher, ChannelSubscriber, ChannelFactoryInitialize
 from unitree_sdk2py.idl.unitree_hg.msg.dds_ import HandCmd_, HandState_, LowCmd_, LowState_
@@ -9,6 +11,7 @@ from unitree_sdk2py.idl.default import unitree_hg_msg_dds__HandCmd_, unitree_hg_
 from unitree_sdk2py.utils.crc import CRC
 from unitree_sdk2py.utils.thread import RecurrentThread
 
+archivo_csv = "q_steps_LM.csv"
 
 # === Índices de articulaciones ===
 class G1JointIndex:
@@ -206,8 +209,8 @@ def main():
 
     # === Carga pasos calculados ===
     
-    q_steps = np.load("q_steps_LM.csv")  # Cargar pasos de LM desde un archivo .csv
-    
+    q_steps = np.loadtxt("q_steps_LM.csv", delimiter= ',')  # Cargar pasos de LM desde un archivo .csv
+
     if q_steps.ndim == 1:
         q_steps = np.expand_dims(q_steps, axis=0)  # Asegurar que es 2D
 
