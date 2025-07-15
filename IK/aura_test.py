@@ -16,6 +16,7 @@ Es necesario:
 # --- Librerías base ---
 import roboticstoolbox as rtb 
 
+from spatialmath import SE3, SO3
 import numpy as np
 from roboticstoolbox.robot.ETS import ETS
 
@@ -93,6 +94,20 @@ print(" jindices: {ets.jindices}")
 Te_fk = ets.eval(robot.qr)
 print(" FK de configuración por defecto (qr):")
 print(Te_fk)
+
+# --- Definir rotación ---
+
+theta_x = np.deg2rad(90) # Rotación de 90 grados en radianes
+R = SO3.Rx(theta_x)  # Rotación alrededor del eje X
+
+# --- Definir posici'on ---
+
+x, y, z = 0.0, 0.2, 0.0  # Posición deseada
+
+T_goal = SE3(R, [x, y, z])  # Pose deseada con rotación y posición
+print(f"Pose objetivo:\n{T_goal}")
+
+
 
 # --- IK usando toolbox integrada ---
 T_goal = SE3(0.0, 0.2, 0.0)  #  Pose deseada a la que llegara en este caso left_rubber_hand
