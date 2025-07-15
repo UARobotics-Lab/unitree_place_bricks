@@ -110,7 +110,7 @@ x, y, z = 0.0, 0.2, 0.0  # Posición deseada
 
 
 # --- IK usando toolbox integrada ---
-T_goal = SE3(0.0, 0.2, 0.0)  #  Pose deseada a la que llegara en este caso left_rubber_hand
+T_goal = SE3(0.0, 0.3, 0.0)  #  Pose deseada a la que llegara en este caso left_rubber_hand
 print(f"Pose objetivo:\n{T_goal}")
 
 # ---  Solver de IK usando NR ---
