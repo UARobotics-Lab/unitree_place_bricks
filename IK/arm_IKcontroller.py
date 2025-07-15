@@ -125,6 +125,7 @@ class ArmSequence:
             G1JointIndex.LeftShoulderYaw, G1JointIndex.LeftElbow,
             G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
             G1JointIndex.LeftWristYaw, 
+            G1JointIndex.WaistYaw, G1JointIndex.WaistRoll, G1JointIndex.WaistPitch, #Cintura
         ]
 
     def Init(self):
