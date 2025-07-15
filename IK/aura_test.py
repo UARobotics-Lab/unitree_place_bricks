@@ -104,13 +104,13 @@ R = SO3.Rx(theta_x)  # Rotación alrededor del eje X
 
 x, y, z = 0.0, 0.2, 0.0  # Posición deseada
 
-T_goal = SE3(R, [x, y, z])  # Pose deseada con rotación y posición
+T_goal = SE3(x, y, z) * SE3(R)  # Pose deseada con rotación y posición
 print(f"Pose objetivo:\n{T_goal}")
 
 
 
 # --- IK usando toolbox integrada ---
-T_goal = SE3(0.0, 0.2, 0.0)  #  Pose deseada a la que llegara en este caso left_rubber_hand
+#T_goal = SE3(0.0, 0.2, 0.0)  #  Pose deseada a la que llegara en este caso left_rubber_hand
 print(f"Pose objetivo:\n{T_goal}")
 
 # ---  Solver de IK usando NR ---
