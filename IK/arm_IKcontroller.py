@@ -266,7 +266,7 @@ def main():
                 # Si la articulación no está activa, mantener la posición anterior o 0.0
                 posiciones_brazo[joint_idx] = q_anterior.get(joint_idx, 0.0) if q_anterior else 0.0
 
-        posiciones_brazo[G1JointIndex.WaistYaw] = -1.54
+        posiciones_brazo[G1JointIndex.WaistYaw] = 0.0
         posiciones_brazo[G1JointIndex.WaistRoll] = 0.0
         posiciones_brazo[G1JointIndex.WaistPitch] = 0.0
 
