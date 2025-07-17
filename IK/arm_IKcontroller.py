@@ -126,6 +126,11 @@ class ArmSequence:
             G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
             G1JointIndex.LeftWristYaw, 
             G1JointIndex.WaistYaw, G1JointIndex.WaistRoll, G1JointIndex.WaistPitch, #Cintura
+            #Brazo derecho
+            G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
+            G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
+            G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
+            G1JointIndex.RightWristYaw,
         ]
 
     def Init(self):
@@ -245,6 +250,12 @@ def main():
         G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
         G1JointIndex.LeftWristYaw,
         G1JointIndex.WaistYaw, G1JointIndex.WaistRoll, G1JointIndex.WaistPitch,
+        #Brazo derecho
+        G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
+        G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
+        G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
+        G1JointIndex.RightWristYaw,
+
     ]
     
 
@@ -269,6 +280,15 @@ def main():
         posiciones_brazo[G1JointIndex.WaistYaw] = 0.0
         posiciones_brazo[G1JointIndex.WaistRoll] = 0.0
         posiciones_brazo[G1JointIndex.WaistPitch] = 0.0
+
+        posiciones_brazo[G1JointIndex.RightShoulderPitch] = 0.0
+        posiciones_brazo[G1JointIndex.RightShoulderRoll] = 0.0
+        posiciones_brazo[G1JointIndex.RightShoulderYaw] = 0.0
+        posiciones_brazo[G1JointIndex.RightElbow] = 0.0
+        posiciones_brazo[G1JointIndex.RightWristRoll] = 0.0
+        posiciones_brazo[G1JointIndex.RightWristPitch] = 0.0
+        posiciones_brazo[G1JointIndex.RightWristYaw] = 0.0
+        
 
         print(f"\n Siguiente paso {i+1}/{len(q_steps)}:")
         print(f"Posiciones (radianes): {posiciones_brazo}")
