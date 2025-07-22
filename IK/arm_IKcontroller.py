@@ -13,7 +13,7 @@ from unitree_sdk2py.utils.crc import CRC
 from unitree_sdk2py.utils.thread import RecurrentThread
 
 ruta="release_arm_sdk.txt"
-archivo_csv = "q_steps_LM.csv"
+archivo_csv = "q_steps_pallet_LM.csv"
 
 # === Índices de articulaciones ===
 class G1JointIndex:
@@ -288,7 +288,7 @@ def main():
         posiciones_brazo[G1JointIndex.RightWristRoll] = 0.0
         posiciones_brazo[G1JointIndex.RightWristPitch] = 0.0
         posiciones_brazo[G1JointIndex.RightWristYaw] = 0.0
-        
+
 
         print(f"\n Siguiente paso {i+1}/{len(q_steps)}:")
         print(f"Posiciones (radianes): {posiciones_brazo}")
@@ -322,5 +322,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
-   
+    main()   
