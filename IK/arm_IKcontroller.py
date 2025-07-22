@@ -241,7 +241,7 @@ def main():
 
     print(f"Ejecutando {len(q_steps)} pasos con control manual...")
 
-    T_total = 30.0  # Segundos total
+    T_total = 40.0  # Segundos total
     T_step = T_total / len(q_steps)
 
     arm_joints = [
