@@ -7,9 +7,19 @@ rows, cols = 3, 4  # Número de filas y columnas en el pallet
 
 class Pallet:
     def __init__(self, rows, cols, brick_size, base_pose: SE3()):
+
+        """        Inicializa un pallet con una cuadrícula de ladrillos.
+
+        :param rows: Número de filas de ladrillos.
+        :param cols: Número de columnas de ladrillos.
+        :param brick_size: Tamaño de cada ladrillo (ancho, largo, alto).
+        :param base_pose: Pose base del pallet en coordenadas globales.        
+
+        """
+
         self.rows = rows
         self.cols = cols
-        self.brick_size = brick_size
+        self.brick_width, self.brick_length, self.brick_height   = brick_size
         self.base_pose = base_pose
 
         self.grid = self._create_grid()
@@ -24,8 +34,8 @@ class Pallet:
         poses = []
         for i in range(self.rows):
             for j in range(self.cols):
-                x = j * self.brick_size[0]
-                y = i * self.brick_size[1]
+                x = j * self.brick_width #columnas en x
+                y = i * self.brick_length # filas en y
                 z = 0 # todos los ladrillos están en el mismo plano
 
                 #Pose local (respecto al pallet)
@@ -48,12 +58,12 @@ class Pallet:
         :return: Pose del ladrillo en el mundo.
         """
                 
-        index = row * self.cols + col
-
-        if 0 <= index < len(self.grid):
+        
+        if 0 <= row < self.rows and 0 <= col < self.cols:
+            index = row * self.cols + col
             return self.grid[index]
         else:
-            raise IndexError("Índice fuera de rango.")
+            raise IndexError("Índice fuera de rango definido en el pallet.")
         
         return self.grid[index]
     

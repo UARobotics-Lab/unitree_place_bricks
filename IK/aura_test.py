@@ -12,7 +12,7 @@ Es necesario:
 - Tener IK.py en la misma carpeta.
 - Haber activado entorno conda: conda activate dktutorial
 """
-
+from pallet import Pallet
 # --- Librerías base ---
 import roboticstoolbox as rtb 
 
@@ -185,26 +185,13 @@ print(f"Error E: {E} | Dentro de límites: {jl_valid} | Tiempo total: {t:.4f}s")
  """
 print("\n Prueba finalizada.")
 
+#Posicion del pallet
 
-""" from swift import Swift """
-""" 
-# Inicia Swift para visualización
-env= Swift() #Crea un entorno de visualización
-env.launch(reload=True)  # Lanza la ventana de visualización
+pallet_pose = SE3(0.4, 0, 0)  # Posición base del pallet respecto a coordenadas globales
 
-# Carga el robot en Swift
-env.add(robot, "aura_robot")  # Añade el robot Aura al entorno
+pallet = Pallet(rows=3, cols=4, brick_size=(0.1, 0.2, 0.06), base_pose=pallet_pose)
 
-# Muestra la configuración inicial del robot
-robot.q = robot.qr  # Configuración inicial
-env.step()  # Actualiza la visualización
+print("Pallet creado con las siguientes poses:")
 
-input("Presiona Enter para mostrar solucion con NR...")
-# Muestra la solución de IK con NR
-robot.q = q_NR[0]  # Usa la primera solución de NR
-env.step()  # Actualiza la visualización
-input("Presiona Enter para mostrar solucion con LM...")
-# Muestra la solución de IK con LM  
-robot.q = q_LM[0]  # Usa la primera solución de LM
-env.step()  # Actualiza la visualización
-print("Visualización completa. Cierra la ventana de Swift para finalizar.") """
+pose_1_2 = pallet.get_pose(1, 2)
+print(f"Pose del ladrillo en fila 1, columna 2: {pose_1_2}")
