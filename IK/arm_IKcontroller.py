@@ -294,8 +294,8 @@ def main():
         print(f"Posiciones (radianes): {posiciones_brazo}")
 
 
-        # res=input("Presiona Enter para continuar, X para salir: ")
-        res= 'a'
+        res=input("Presiona Enter para continuar, X para salir: ")
+        #res= 'a'
         
 
 
