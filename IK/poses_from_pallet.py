@@ -1,6 +1,11 @@
 from pallet import Pallet
+
+from rich.console import Console
+from rich.table import Table
+
 #from roboticstoolbox import Robot
 from spatialmath import SE3, SO3
+from spatialmath.base import trprint 
 from IK import NR, LM_Chan  # métodos de IK personalizadosi 
 import numpy as np
 
@@ -80,21 +85,40 @@ q0 = np.tile(robot.qr,(solver.slimit, 1)) + np.random.uniform(-0.3, 0.3, (solver
 # --- Guardar pasos de IK ---
 q_steps = []
 
+print("\n{:<8} {:<8} {:<10} {:<12} {:<10}".format("Fila", "Columna", "Estado", "Iteraciones", "Error"))
+print("=" * 65)
+
 for row in range(pallet.rows):
     for col in range(pallet.cols):
         # Obtener pose del ladrillo en la cuadrícula
         T_goal = pallet.get_pose(row, col)
-        print(f"Pose objetivo para ladrillo en fila {row}, columna {col}:\n{T_goal}")
+        #print(f"Pose objetivo para ladrillo en fila {row}, columna {col}:\n{T_goal}")
 
         # Resolver IK
         q, success, its, searches, E, valid, t_total, q_steps_local, = solver.solve(ets, T_goal.A, q0=q0)
         
+        estado = "ÉXITO" if success else "FALLO"
+        
+        #Encabezado de la tabla
+        print("{:<8} {:<8} {:<10} {:<12} {:.2e}".format(row, col, estado, its if success else "-", E if success else 0))
+
+        # Mostrar pose SE3 formateada
+        print("┌──────────── Pose objetivo (SE3) ────────────┐")
+        #trprint(T_goal.A, fmt="{:+.4f}", label="│ ", file=None)
+        print(np.array_str(T_goal.A, precision=4, suppress_small=True))
+        print("└────────────────────────────────────────────┘")
+        
         if success:
-            print(f"Solución encontrada para ladrillo en fila {row}, columna {col}: {q}")
+            q_rounded = np.round(q, 4)
+            #print(f"Solución encontrada para ladrillo en fila {row}, columna {col}: {q}")
+            print(f"q solucion: {q_rounded.tolist()}\n")
             q_steps.extend(q_steps_local)
         
         else:
-            print(f"No se encontró solución para ladrillo en fila {row}, columna {col}")
+            #print(f"No se encontró solución para ladrillo en fila {row}, columna {col}")
+            print("  ↳ No se pudo alcanzar la pose objetivo.\n")
+
+        print("-" * 65)
 
 # --- Convertir a np.array y guardar pasos ---
 q_steps = np.array(q_steps)
