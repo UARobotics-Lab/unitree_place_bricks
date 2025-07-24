@@ -6,7 +6,7 @@ brick_size = (0.1, 0.2, 0.06) # Tamaño del ladrillo (ancho, largo, alto)
 rows, cols = 3, 4  # Número de filas y columnas en el pallet
 
 class Pallet:
-    def __init__(self, rows, cols, brick_size, base_pose: SE3()):
+    def __init__(self, rows, cols, layers, brick_size, base_pose: SE3()):
 
         """        Inicializa un pallet con una cuadrícula de ladrillos.
 
@@ -19,6 +19,7 @@ class Pallet:
 
         self.rows = rows
         self.cols = cols
+        self.layers = layers
         self.brick_width, self.brick_length, self.brick_height   = brick_size
         self.base_pose = base_pose
 
@@ -34,18 +35,19 @@ class Pallet:
         poses = []
         for i in range(self.rows):
             for j in range(self.cols):
-                x = j * self.brick_width #columnas en x
-                y = i * self.brick_length # filas en y
-                z = 0 # todos los ladrillos están en el mismo plano
+                for k in range(self.layers):
+                    x = j * self.brick_width #columnas en x
+                    y = i * self.brick_length # filas en y
+                    z = k * self.brick_height # todos los ladrillos están en el mismo plano
 
-                #Pose local (respecto al pallet)
+                    #Pose local (respecto al pallet)
 
-                local_pose = SE3(x, y, z)
+                    local_pose = SE3(x, y, z)
 
-                # Pose global (respecto al mundo)
-                global_pose = self.base_pose * local_pose
+                    # Pose global (respecto al mundo)
+                    global_pose = self.base_pose * local_pose
 
-                poses.append(global_pose)
+                    poses.append(global_pose)
 
         return poses
     
