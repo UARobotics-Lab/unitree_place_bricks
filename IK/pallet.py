@@ -51,7 +51,7 @@ class Pallet:
 
         return poses
     
-    def get_pose(self, row, col):
+    def get_pose(self, row, col, layer):
         """
         Obtiene la pose de un ladrillo específico en la cuadrícula.
 
