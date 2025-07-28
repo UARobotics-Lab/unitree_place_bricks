@@ -306,7 +306,7 @@ def main():
             print("Proceso cancelado.")
             for paso in pasos:
                 posiciones = {int(k): v for k, v in paso.get("posiciones", {}).items()}
-                duracion = paso.get("duracion", 1.25)
+                duracion = paso.get("duracion", 3.00)
                 seq.move_to(posiciones, duration=duracion, q_init_override=q_anterior)
                 q_anterior = posiciones
             
