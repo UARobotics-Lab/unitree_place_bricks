@@ -39,6 +39,177 @@ from swift import Swift
 
 #Se presentan distintos metodos numericos para resolver el problema de cinemática inversa (IK). >6 DOF
 
+# class IK(ABC):
+#     """
+#     An abstract super class which provides basic functionality to perform numerical inverse
+#     kinematics (IK). Superclasses can inherit this class and implement the solve method.
+
+#     This class also provides a mechanism to collect data on performance for large scale
+#     experiments.
+#     """
+
+#     def __init__(
+#         self,
+#         name: str = "IK Solver",
+#         ilimit: int = 30,
+#         slimit: int = 100,
+#         tol: float = 1e-6,
+#         we: np.ndarray = np.ones(6),
+#         problems: int = 1000,
+#         reject_jl: bool = True,
+#         λΣ: float=0.0,
+#         λm: float=0.0, 
+#         ps: float=0.1,
+#         pi: Optional[np.ndarray]=None,
+#     ):
+#         """
+#         name: The name of the IK algorithm
+#         ilimit: How many iterations are allowed within a search before a new search is started
+#         slimit: How many searches are allowed before being deemed unsuccessful
+#         tol: Maximum allowed residual error E
+#         we: A 6 vector which assigns weights to Cartesian degrees-of-freedom
+#         problems: Total number of IK problems within the experiment
+#         reject_jl: Reject solutions with joint limit violations
+#         λΣ: The gain for joint limit avoidance. Setting to 0.0 will remove this completely from the solution
+#         λm: The gain for maximisation. Setting to 0.0 will remove this completely from the solution
+#         ps: The minimum angle/distance (in radians or metres) in which the joint is allowed to approach to its limit
+#         pi: The influence angle/distance (in radians or metres) in null space motion becomes active
+#         """
+
+#         # Solver parameters
+#         self.name = name
+#         self.slimit = slimit
+#         self.ilimit = ilimit
+#         self.tol = tol
+#         self.We = np.diag(we)
+#         self.reject_jl = reject_jl
+#         self.λΣ = λΣ
+#         self.λm = λm
+#         self.ps = ps
+#         self.pi = pi
+
+#         # Solver results
+#         self.success = np.zeros(problems)
+#         self.searches = np.zeros(problems)
+#         self.iterations = np.zeros(problems)
+#         self.valid_jl = np.zeros(problems)
+#         self.times = np.zeros(problems)
+
+#         # initialise with NaN
+#         self.searches[:] = np.nan
+#         self.iterations[:] = np.nan
+#         self.success[:] = np.nan
+#         self.valid_jl[:] = np.nan
+#         self.times[:] = np.nan
+
+#     def solve(self, ets: rtb.ETS, Tep: np.ndarray, q0: np.ndarray):
+#         """
+#         This method will attempt to solve the IK problem and obtain joint coordinates
+#         which result the the end-effector pose Tep.
+
+#         The method returns a tuple:
+#         q: The joint coordinates of the solution (ndarray). Note that these will not
+#             be valid if failed to find a solution
+#         success: True if a solution was found (boolean)
+#         iterations: The number of iterations it took to find the solution (int)
+#         searches: The number of searches it took to find the solution (int)
+#         residual: The residual error of the solution (float)
+#         jl_valid: True if joint coordinates q are within the joint limits
+#         total_t: The total time spent within the step method
+#         """
+
+#         # Iteration count
+#         i = 0
+#         total_i = 0
+#         total_t = 0.0
+
+#         for search in range(self.slimit):
+#             q = q0[search].copy()
+            
+#             while i <= self.ilimit:
+#                 i += 1
+
+#                 # Attempt a step
+#                 try:
+#                     t, E, q = self.step(ets, Tep, q)
+
+#                     # Acclumulate total time
+#                     total_t += t
+#                 except np.linalg.LinAlgError:
+#                     # Abandon search and try again
+#                     break
+
+#                 # Check if we have arrived
+#                 if E < self.tol:
+
+#                     # Wrap q to be within +- 180 deg
+#                     # If your robot has larger than 180 deg range on a joint
+#                     # this line should be modified in incorporate the extra range
+#                     q = (q + np.pi) % (2 * np.pi) - np.pi
+
+#                     # Check if we have violated joint limits
+#                     jl_valid = self.check_jl(ets, q)
+
+#                     if not jl_valid and self.reject_jl:
+#                         # Abandon search and try again
+#                         break
+#                     else:
+#                         return q, True, total_i + i, search + 1, E, jl_valid, total_t
+
+#             total_i += i
+#             i = 0
+
+#         # If we make it here, then we have failed
+#         return q, False, np.nan, np.nan, E, np.nan, np.nan
+
+#     def error(self, Te: np.ndarray, Tep: np.ndarray):
+#         """
+#         Calculates the engle axis error between current end-effector pose Te and
+#         the desired end-effector pose Tep. Also calulates the quadratic error E
+#         which is weighted by the diagonal matrix We.
+
+#         Returns a tuple:
+#         e: angle-axis error (ndarray in R^6)
+#         E: The quadratic error weighted by We
+#         """
+#         e = rtb.angle_axis(Te, Tep)
+#         E = 0.5 * e @ self.We @ e
+
+#         return e, E
+
+#     def check_jl(self, ets: rtb.ETS, q: np.ndarray):
+#         """
+#         Checks if the joints are within their respective limits
+
+#         Returns a True if joints within feasible limits otherwise False
+#         """
+
+#         # Loop through the joints in the ETS
+#         for i in range(ets.n):
+
+#             # Get the corresponding joint limits
+#             ql0 = ets.qlim[0, i]
+#             ql1 = ets.qlim[1, i]
+
+#             # Check if q exceeds the limits
+#             if q[i] < ql0 or q[i] > ql1:
+#                 return False
+
+#         # If we make it here, all the joints are fine
+#         return True
+
+#     @abstractmethod
+#     def step(self, ets: rtb.ETS, Tep: np.ndarray, q: np.ndarray):
+#         """
+#         Superclasses will implement this method to perform a step of the implemented
+#         IK algorithm
+#         """
+#         pass
+
+
+
+
+# """
 
 class IK(ABC):
     """
@@ -546,6 +717,3 @@ class QP(IK):
 
         return E, q
     
-
-
-
