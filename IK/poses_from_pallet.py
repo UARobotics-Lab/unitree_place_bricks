@@ -20,6 +20,26 @@ from roboticstoolbox import Robot
 import os
 import json
 
+def probar_orientacion_pallet(angulo_deg, ets, solver, robot):
+    z = 0.1
+    orientacion = SO3.Rz(np.deg2rad(angulo_deg))  # Rotación sobre eje Z
+    base_pose = SE3(0.1, 0.15, z) * SE3(orientacion)
+
+    pallet = Pallet(rows=2, cols=2, layers=3, brick_size=(0.1, 0.2, 0.06), base_pose=base_pose)
+
+    total, exitosos = 0, 0
+    for row in range(pallet.rows):
+        for col in range(pallet.cols):
+            for layer in range(pallet.layers):
+                T_goal = pallet.get_pose(row, col, layer)
+                q, success, *_ = solver.solve(ets, T_goal.A)
+                total += 1
+                if success:
+                    exitosos += 1
+
+    print(f"Ángulo: {angulo_deg}° → {exitosos}/{total} poses alcanzadas.")
+    return exitosos
+
 #  Ruta al URDF del robot Aura
 urdf_path = os.path.abspath("g1_dual_arm_copy.urdf") #URDF modificado para Aura
 robot = Robot.URDF(urdf_path)
@@ -71,7 +91,7 @@ ets.jindices = np.array(ets.jindices, dtype=int)#Forzamos jindices a tipo entero
 # --- Crear pallet ---
 brick_size = (0.1, 0.2, 0.06)  # Tamaño del ladrillo (ancho, largo, alto)
 z = 0.10 # Altura del pallet
-orientacion = SO3.Ry(np.deg2rad(0))  # Rotación de 45 grados alrededor del eje Y
+orientacion = SO3.Rz(np.deg2rad(0))  # Rotación de 45 grados alrededor del eje Y
 #pallet_pose = SE3(0.2, 0, z)  
 #pallet_pose = SE3(0.1, 0.15, z) * SE3(orientacion)  # Posición base del pallet respecto a coordenadas globales
 #pallet = Pallet(rows=2, cols=1, layers=3, brick_size=brick_size, base_pose=pallet_pose)
@@ -79,10 +99,10 @@ orientacion = SO3.Ry(np.deg2rad(0))  # Rotación de 45 grados alrededor del eje 
  #Pallet 1 y pallet 2 para mover ladrillos
 
 pallet1_pose = SE3(0.1, 0.15, z) * SE3(orientacion)
-pallet2_pose = SE3(-0.1, -0.15, z) * SE3(orientacion)
+pallet2_pose = SE3(0.1, 0.15, z) * SE3(orientacion)
 
-pallet1 = Pallet(rows=2, cols=1, layers=3, brick_size=brick_size, base_pose=pallet1_pose)
-pallet2 = Pallet(rows=2, cols=1, layers=3, brick_size=brick_size, base_pose=pallet2_pose)
+pallet1 = Pallet(rows=2, cols=2, layers=3, brick_size=brick_size, base_pose=pallet1_pose)
+pallet2 = Pallet(rows=2, cols=2, layers=3, brick_size=brick_size, base_pose=pallet2_pose)
 
 
 # --- Solver de IK ---
@@ -113,6 +133,11 @@ q0 = np.tile(robot.qr,(solver.slimit, 1)) + np.random.uniform(-0.3, 0.3, (solver
 mover = MoverLadrillo(robot=robot, solver=solver, ets=ets, pallet1=pallet1, pallet2=pallet2)
 
 rutina = mover.mover(pos_origen=(0, 0, 0), pos_destino=(1, 0, 0), cintura_giro_rad=np.deg2rad(90))
+
+cintura_por_pallet = {
+    "Pallet 1": 0.0,
+    "Pallet 2": -1.57
+}
 
 with open("rutina_ladrillo.json", "w") as f:
     json.dump(rutina, f, indent=4)
@@ -148,6 +173,7 @@ pallets = {
 
 for nombre, pallet in pallets.items():
     console.rule(f"[bold blue] Revisión de {nombre} [/bold blue]")
+    cintura_yaw = cintura_por_pallet[nombre]
 
     for row in range(pallet.rows):
         for col in range(pallet.cols):
@@ -165,19 +191,13 @@ for nombre, pallet in pallets.items():
                 error = f"{E:.2e}" if success else "0"
                 q_str = f"[green]{np.round(q, 4).tolist()}[/green]" if success else "[red]―[/red]"
                 style = "bold green" if success else "bold red"
-                cintura_yaw = 0.0
+                
                 for paso in rutina:
                     if "brazo" in paso:
                         q_rutina = np.array(paso["brazo"])
                         if np.allclose(q[:len(q_rutina)], q_rutina, atol=1e-3):
                             cintura_yaw = paso["cintura"].get("12", 0.0)
                             break
-
-
-
-
-
-
 
                 table.add_row(
                     nombre,

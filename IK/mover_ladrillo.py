@@ -169,11 +169,18 @@ class MoverLadrillo:
         self.tiempo_mov = tiempo_mov
 
     def resolver_pose(self, pose, cintura_rad=0.0):
-        q0 = np.tile(self.robot.qr, (self.solver.slimit, 1)) + np.random.uniform(-0.3, 0.3, (self.solver.slimit, self.robot.n))
+        np.random.seed(42)  # Valor fijo para reproducibilidad
+        q0 = np.tile(self.robot.qr, (self.solver.slimit, 1))
+
+        #q0 = np.tile(self.robot.qr, (self.solver.slimit, 1)) + np.random.uniform(-0.3, 0.3, (self.solver.slimit, self.robot.n))
         q, success, *_ = self.solver.solve(self.ets, pose.A, q0=q0)
         if not success:
             print(" IK falló para pose:\n", np.array_str(pose.A, precision=4, suppress_small=True))
             return None
+        
+        print(f"✅ IK exitosa. Pose objetivo:\n{np.array_str(pose.A, precision=4, suppress_small=True)}")
+        print(f"➡️  q resuelto: {np.round(q, 4).tolist()} con cintura: {round(cintura_rad, 4)}\n")
+
         return {
             "tiempo": self.tiempo_mov,
             "brazo": np.round(q, 4).tolist(),
@@ -183,7 +190,7 @@ class MoverLadrillo:
                 14: 0.0   # WaistPitch
             }
         }
-    def mover(self, pos_origen: tuple, pos_destino: tuple, cintura_giro_rad=1.57):
+    def mover(self, pos_origen: tuple, pos_destino: tuple, cintura_giro_rad=-1.57):
         """
         Genera una rutina para mover un ladrillo desde pallet1 a pallet2.
         
@@ -196,11 +203,24 @@ class MoverLadrillo:
 
         # Obtener poses
         pose_origen = self.pallet1.get_pose(*pos_origen)
+        print("\n[INFO] Pose de origen (SE3):")
+        print(np.array_str(pose_origen.A, precision=4, suppress_small=True))
+
         pose_destino = self.pallet2.get_pose(*pos_destino)
+        print("\n[INFO] Pose de destino (SE3):")
+        print(np.array_str(pose_destino.A, precision=4, suppress_small=True))
+
 
         # Calcular altura intermedia
         T_arriba_origen = pose_origen * SE3(0, 0, self.altura_intermedia)
         T_arriba_destino = pose_destino * SE3(0, 0, self.altura_intermedia)
+
+        print("\n[INFO] Pose elevada sobre origen (T_arriba_origen):")
+        print(np.array_str(T_arriba_origen.A, precision=4, suppress_small=True))
+
+        print("\n[INFO] Pose elevada sobre destino (T_arriba_destino):")
+        print(np.array_str(T_arriba_destino.A, precision=4, suppress_small=True))
+
 
         # Secuencia de movimientos
         rutina.append(self.resolver_pose(T_arriba_origen, cintura_rad=0.0))
