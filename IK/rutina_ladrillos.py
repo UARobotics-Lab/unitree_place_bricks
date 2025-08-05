@@ -218,13 +218,13 @@ def main():
     ruta_archivo_txt = ruta
 
     try:
-        with open(ruta_archivo_txt, 'r') as f:
-            data = json.load(f)
+        with open(ruta_archivo_txt, 'r') as s:
+            data = json.load(s)
     except:
         print("error")
         sys.exit()
 
-    pasos = data.get("pasos", [])
+    pasitos = data.get("pasos", [])
 
     ChannelFactoryInitialize(0, sys.argv[1])  # Init DDS
 
@@ -305,7 +305,7 @@ def main():
 
         if res.lower() == 'x' or i == (len(pasos)-1):
             print("Proceso cancelado.")
-            for paso in pasos:
+            for paso in pasitos:
                 posiciones = {int(k): v for k, v in paso.get("posiciones", {}).items()}
                 duracion = paso.get("duracion", 3.00)
                 seq.move_to(posiciones, duration=duracion, q_init_override=q_anterior)
