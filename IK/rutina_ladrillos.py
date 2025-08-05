@@ -311,6 +311,13 @@ def main():
                 duracion = paso.get("duracion", 3.00)
                 seq.move_to(posiciones, duration=duracion, q_init_override=q_anterior)
                 q_anterior = posiciones
+            
+            print(" Esperando estabilización antes de liberar el brazo...")
+            time.sleep(2.0)
+            seq.freeze_and_release_a() #Detener y liberar con seguridad el brazo
+
+        
+
             break
 
 
