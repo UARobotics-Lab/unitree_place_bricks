@@ -240,13 +240,13 @@ def main():
     with open(archivo_json, "r") as f:
         pasos = json.load(f)
 
-    if q_steps.ndim == 1:
-        q_steps = np.expand_dims(q_steps, axis=0)  # Asegurar que es 2D
+    # if q_steps.ndim == 1:
+    #     q_steps = np.expand_dims(q_steps, axis=0)  # Asegurar que es 2D
 
-    print(f"Ejecutando {len(q_steps)} pasos con control manual...")
+    # print(f"Ejecutando {len(q_steps)} pasos con control manual...")
 
-    T_total = 40.0  # Segundos total
-    T_step = T_total / len(q_steps)
+    # T_total = 40.0  # Segundos total
+    # T_step = T_total / len(q_steps)
 
     arm_joints = [
         G1JointIndex.LeftShoulderPitch, G1JointIndex.LeftShoulderRoll,
@@ -287,14 +287,14 @@ def main():
         posiciones_brazo[G1JointIndex.WaistRoll] = cintura.get("13", 0.0)
         posiciones_brazo[G1JointIndex.WaistPitch] = cintura.get("14", 0.0)
 
-        # Mantener brazo derecho fijo
-        for joint in [
-            G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
-            G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
-            G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
-            G1JointIndex.RightWristYaw
-        ]:
-            posiciones_brazo[joint] = 0.0
+        # # Mantener brazo derecho fijo
+        # for joint in [
+        #     G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
+        #     G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
+        #     G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
+        #     G1JointIndex.RightWristYaw
+        # ]:
+        #     posiciones_brazo[joint] = 0.0
 
         print(f"\nPaso {i+1}/{len(pasos)}:")
         print(f"Brazo: {q_brazo}")
@@ -303,7 +303,7 @@ def main():
         res = input("Presiona Enter para continuar, X para salir: ")
         seq.move_to(posiciones_brazo, duration=paso["tiempo"], q_init_override=q_anterior)
 
-        if res.lower() == 'x' or i == (len(q_steps)-1):
+        if res.lower() == 'x':
             print("Proceso cancelado.")
             for paso in pasos:
                 posiciones = {int(k): v for k, v in paso.get("posiciones", {}).items()}
