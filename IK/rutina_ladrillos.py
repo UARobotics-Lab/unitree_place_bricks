@@ -239,6 +239,7 @@ def main():
     #q_steps = np.loadtxt("q_steps_pallet_LM.csv", delimiter= ',')  # Cargar pasos de LM desde un archivo .csv
     with open(archivo_json, "r") as f:
         pasos = json.load(f)
+        print(pasos)
 
     # if q_steps.ndim == 1:
     #     q_steps = np.expand_dims(q_steps, axis=0)  # Asegurar que es 2D
