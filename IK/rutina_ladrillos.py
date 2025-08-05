@@ -303,7 +303,7 @@ def main():
         res = input("Presiona Enter para continuar, X para salir: ")
         seq.move_to(posiciones_brazo, duration=paso["tiempo"], q_init_override=q_anterior)
 
-        if res.lower() == 'x':
+        if res.lower() == 'x' or i == (len(paso)-1):
             print("Proceso cancelado.")
             for paso in pasos:
                 posiciones = {int(k): v for k, v in paso.get("posiciones", {}).items()}
