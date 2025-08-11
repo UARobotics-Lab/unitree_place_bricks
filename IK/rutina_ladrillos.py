@@ -305,16 +305,16 @@ def main():
         seq.move_to(posiciones_brazo, duration=paso["tiempo"], q_init_override=q_anterior)
 
         if res.lower() == 'x' or i == (len(pasos)-1):
-            print("Proceso cancelado.")
-            for paso in pasitos:
-                posiciones = {int(k): v for k, v in paso.get("posiciones", {}).items()}
-                duracion = paso.get("duracion", 3.00)
-                seq.move_to(posiciones, duration=duracion, q_init_override=q_anterior)
-                q_anterior = posiciones
+            input("Proceso cancelado. Presiona Enter para salir.")
+            # for paso in pasitos:
+            #     posiciones = {int(k): v for k, v in paso.get("posiciones", {}).items()}
+            #     duracion = paso.get("duracion", 3.00)
+            #     seq.move_to(posiciones, duration=duracion, q_init_override=q_anterior)
+            #     q_anterior = posiciones
             
-            print(" Esperando estabilización antes de liberar el brazo...")
-            time.sleep(2.0)
-            seq.freeze_and_release_a() #Detener y liberar con seguridad el brazo
+            #input(" Esperando estabilización antes de liberar el brazo...")
+            #time.sleep(2.0)
+            #seq.freeze_and_release_a() #Detener y liberar con seguridad el brazo
 
         
 
@@ -326,7 +326,7 @@ def main():
 
   
     
-    # seq.freeze_and_release_a()
+    seq.freeze_and_release_a()
     hand_seq.freeze_and_release()
 
 
