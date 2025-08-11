@@ -1,79 +1,53 @@
-from spatialmath import SE3
+from spatialmath import SE3 , SO3
 import numpy as np
 from dataclasses import dataclass
-from typing import Tuple, Dict, Literal, Optional
+from typing import Tuple, Dict, Literal, Optional, Union 
 
 
 brick_size = (0.1, 0.2, 0.06) # Tamaño del ladrillo (ancho, largo, alto)
 rows, cols = 3, 4  # Número de filas y columnas en el pallet
 
 GraspName = Literal["top_center", "long_edge_mid", "short_edge_mid", "custom"]
+#GraspName = str
 
 @dataclass
 class Brick:
 
-    #Dimensiones en metros : ancho (x), largo (y), alto (z)
-    width: float = brick_size[0]
-    length: float = brick_size[1]
-    height: float = brick_size[2]
-    mass = 0.5  # Masa del ladrillo en kg (ajustar según sea necesario)
-    #Por defecto: centro superior del ladrillo
-    grasp_points: Dict[GraspName, SE3] = None
+    def __init__(
+        self,
+        width: float,
+        length: float,
+        height: float,
+        grasp_points: Optional[Dict[GraspName, SE3]] = None,
+        default_grasp: GraspName = "top_center",
+    ):
+        """Define dimensiones del ladrillo y puntos de agarre locales."""
+        self.width = width
+        self.length = length
+        self.height = height
 
-    def __post_init__(self):
-        """
-        Inicializa los puntos de agarre del ladrillo.
-        """
-        if self.grasp_points is None:
-                    self.grasp_points = {
-                "top_center": SE3(0, 0, +self.height / 2.0),
-                "long_edge_mid": SE3(0, +self.length / 2.0, 0),
-                "short_edge_mid": SE3(+self.width / 2.0, 0, 0),
-                "custom": SE3()  # Puede ser modificado según necesidad
+        # Si no nos pasan puntos de agarre, creamos unos por defecto
+        if grasp_points is None:
+            grasp_points = {
+                "top_center":   SE3(0, 0,  +self.height / 2.0),
+                "long_edge_mid":  SE3(0,  +self.length / 2.0, 0),
+                "short_edge_mid": SE3(+self.width  / 2.0, 0, 0),
             }
-    def grasp_pose_local(self, name: GraspName = "top_center") -> SE3:
-        """
-        Obtiene la pose de agarre local del ladrillo.
+        elif not isinstance(grasp_points, dict):
+            raise TypeError("grasp_points debe ser un dict o None")
 
-        :param name: Nombre del punto de agarre.
-        :return: Pose del punto de agarre en coordenadas locales.
-        """
-        return self.grasp_points.get(name, self.grasp_points["top_center"])
-
-
-    def __init__(self, position: SE3(), size: tuple = brick_size):
-        """
-        Inicializa un ladrillo con una posición y tamaño específicos.
-
-        :param position: Posición del ladrillo en coordenadas globales.
-        :param size: Tamaño del ladrillo (ancho, largo, alto).
-        """
-        self.position = position
-        self.size = size  # Tamaño del ladrillo (ancho, largo, alto)
-        self.width, self.length, self.height = size
-        self.pose = SE3(self.position)
-        self.pose = self.pose * SE3.Rx(np.pi / 2)
-    
-    def grip(self):
-        """
-        Simula el agarre del ladrillo.
-        """
-        print(f"Agarra el ladrillo en la posición: {self.position}")
-
-
-    def release(self):
-        """
-        Simula la liberación del ladrillo.
-        """
-        print(f"Libera el ladrillo en la posición: {self.position}")
-
-        return self.position
-        
-
-    
+        self.grasp_points = grasp_points
+        self.default_grasp = default_grasp if default_grasp in self.grasp_points else "top_center"
+      
+   
+    def grasp_pose_local(self, name: Optional[GraspName] = None) -> SE3:
+        """Devuelve la pose local del punto de agarre (por nombre)."""
+        if name is None:
+            name = self.default_grasp
+        return self.grasp_points.get(name, self.grasp_points[self.default_grasp])
 
 class Pallet:
-    def __init__(self, rows, cols, layers, brick: Brick, base_pose: SE3()):
+    def __init__(self, rows, cols, layers, brick: Union[Brick, Tuple[float, float, float]], base_pose: SE3 = SE3()):
 
         """        Inicializa un pallet con una cuadrícula de ladrillos.
 
@@ -83,6 +57,11 @@ class Pallet:
         :param base_pose: Pose base del pallet en coordenadas globales.        
 
         """
+    
+        if not isinstance(brick, Brick):
+            # permitir (width, length, height)
+            w, l, h = brick
+            brick = Brick(w, l, h)
 
         self.rows = rows
         self.cols = cols
@@ -128,7 +107,7 @@ class Pallet:
         raise IndexError("Índice fuera de rango definido en el pallet.")
 
     def get_center_pose(self, row: int, col: int, layer: int) -> SE3:
-        return self._grid_centers[self.index_of(row, col, layer)]
+        return self._grid_center[self.index_of(row, col, layer)]
 
     def _create_grid(self):
 
@@ -156,13 +135,21 @@ class Pallet:
 
         return poses
     
-    def get_pose(self, row, col, layer, grasp: GraspName = "top_center", approach_rot: Optional[SO3] = None, approach_offset: float = 0.0) -> SE3:
-        """
-        Devuelve la pose objetivo del **punto de agarre** del ladrillo en mundo.
-        - grasp: cuál punto de agarre usar (definido en Brick)
-        - approach_rot: orientación adicional del efector al aproximar (SO3), ej. rotar la pinza
-        - approach_offset: desplazar en -Z local del efector (acercamiento vertical) en metros
-        """
+    def get_pose(self, row, col, layer, grasp: Optional[str] = None) -> SE3:
+
+        if not (0 <= row < self.rows and 0 <= col < self.cols and 0 <= layer < self.layers):
+            raise IndexError("Índice fuera de rango definido en el pallet.")
+
+        # índice y pose base de ese hueco
+        index = layer * (self.rows * self.cols) + row * self.cols + col
+        slot_pose = self._grid_center[index]  # o self.grid[index] según tu implementación
+
+        # offset local del agarre
+        T_grasp_local = self.brick.grasp_pose_local(grasp)
+        return slot_pose * T_grasp_local
+        
+"""   def get_pose(self, row, col, layer, grasp: GraspName = "top_center", approach_rot: Optional[SO3] = None, approach_offset: float = 0.0) -> SE3:
+       
         center_world = self.get_center_pose(row, col, layer)
         
         #Pose del grasp en el frame del ladrillo
@@ -179,7 +166,7 @@ class Pallet:
         if approach_offset != 0.0:
             T_grasp_world = T_grasp_world * SE3(0, 0, -approach_offset)
 
-        return T_grasp_world
+        return T_grasp_world """
         
  
     

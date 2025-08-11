@@ -1,4 +1,4 @@
-from pallet import Pallet
+from pallet import Pallet , Brick
 
 from rich.console import Console
 from rich.table import Table
@@ -20,25 +20,6 @@ from roboticstoolbox import Robot
 import os
 import json
 
-def probar_orientacion_pallet(angulo_deg, ets, solver, robot):
-    z = 0.1
-    orientacion = SO3.Rz(np.deg2rad(angulo_deg))  # Rotación sobre eje Z
-    base_pose = SE3(0.1, 0.15, z) * SE3(orientacion)
-
-    pallet = Pallet(rows=2, cols=2, layers=3, brick_size=(0.1, 0.2, 0.06), base_pose=base_pose)
-
-    total, exitosos = 0, 0
-    for row in range(pallet.rows):
-        for col in range(pallet.cols):
-            for layer in range(pallet.layers):
-                T_goal = pallet.get_pose(row, col, layer)
-                q, success, *_ = solver.solve(ets, T_goal.A)
-                total += 1
-                if success:
-                    exitosos += 1
-
-    print(f"Ángulo: {angulo_deg}° → {exitosos}/{total} poses alcanzadas.")
-    return exitosos
 
 #  Ruta al URDF del robot Aura
 urdf_path = os.path.abspath("g1_dual_arm_copy.urdf") #URDF modificado para Aura
@@ -82,36 +63,36 @@ def robust_solve(self, Tep, q0=None):
     return q0_method
 
 ETS.solve = robust_solve   
-#print(" Método eval de ETS modificado para usar jindices como enteros.")
-#ETS: Elementary Transformation Sequence-> Cadena cinematica usando transformaciones elementales
 
 ets = robot.ets(end="left_rubber_hand")
 ets.jindices = np.array(ets.jindices, dtype=int)#Forzamos jindices a tipo entero para evitar problemas con el solver
 
-# --- Crear pallet ---
-brick_size = (0.1, 0.2, 0.06)  # Tamaño del ladrillo (ancho, largo, alto)
-z = 0.10 # Altura del pallet
-orientacion = SO3.Rz(np.deg2rad(0))  # Rotación de 45 grados alrededor del eje Y
-#pallet_pose = SE3(0.2, 0, z)  
-#pallet_pose = SE3(0.1, 0.15, z) * SE3(orientacion)  # Posición base del pallet respecto a coordenadas globales
-#pallet = Pallet(rows=2, cols=1, layers=3, brick_size=brick_size, base_pose=pallet_pose)
- 
- #Pallet 1 y pallet 2 para mover ladrillos
+# --- Definición de ladrillos y pallets ---
+#Definición de ladrillo
+brick = Brick( width=0.1, length=0.2, height=0.06)
 
+# Crear pallet 
+z = 0.10 # Altura del pallet
+orientacion = SO3.Rz(np.deg2rad(0)) 
+
+""" 
+pallet_pose = SE3(0.2, 0, z)  
+pallet_pose = SE3(0.1, 0.15, z) * SE3(orientacion)  # Posición base del pallet respecto a coordenadas globales
+pallet = Pallet(rows=2, cols=1, layers=3, brick_size=brick_size, base_pose=pallet_pose)
+ """ 
+#Pallet 1 y pallet 2 para mover ladrillos
 pallet1_pose = SE3(0.1, 0.15, z) * SE3(orientacion)
 pallet2_pose = SE3(0.1, 0.15, z) * SE3(orientacion)
 
-pallet1 = Pallet(rows=2, cols=2, layers=3, brick_size=brick_size, base_pose=pallet1_pose)
-pallet2 = Pallet(rows=2, cols=2, layers=3, brick_size=brick_size, base_pose=pallet2_pose)
+pallet1 = Pallet(rows=1, cols=3, layers=3, brick= brick, base_pose=pallet1_pose)
+pallet2 = Pallet(rows=1, cols=3, layers=3, brick= brick, base_pose=pallet2_pose)
 
 
 # --- Solver de IK ---
 
 solver = LM_Chan(ilimit=40, slimit=30, tol_min=1e-6, tol_max=1e-3)
+np.random.seed(42) 
 #solver = LM_Chan(ilimit=40, slimit=30)
-
-# --- Vector de busqueda inicial aletorio ---
-np.random.seed(42)  
 #q0 =  np.random.uniform(-1, 1, (solver.slimit, robot.n))  # 30 intentos de inicio aleatorio
 q0 = np.tile(robot.qr,(solver.slimit, 1)) + np.random.uniform(-0.3, 0.3, (solver.slimit, robot.n)) 
 
@@ -132,7 +113,7 @@ q0 = np.tile(robot.qr,(solver.slimit, 1)) + np.random.uniform(-0.3, 0.3, (solver
 
 mover = MoverLadrillo(robot=robot, solver=solver, ets=ets, pallet1=pallet1, pallet2=pallet2)
 
-rutina = mover.mover(pos_origen=(0, 0, 0), pos_destino=(1, 0, 0), cintura_giro_rad=np.deg2rad(90))
+rutina = mover.mover(pos_origen=(0, 0, 0), pos_destino=(0, 0, 0), cintura_giro_rad=np.deg2rad(90))
 
 cintura_por_pallet = {
     "Pallet 1": 0.0,
