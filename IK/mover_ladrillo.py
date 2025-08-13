@@ -157,7 +157,13 @@
 from spatialmath import SE3
 import numpy as np
 
-class MoverLadrillo: 
+class MoverLadrillo:
+   
+    # Presets de mano (ABRIR y CERRAR)
+    LEFT_HAND_OPEN  = {0: 0.452213, 1: 0.228086, 2: 0.416099, 3: 0.700468, 4: 0.476052, 5: 0.805903, 6: 0.365497}
+    LEFT_HAND_CLOSE = {0: 0.452482, 1: 0.399409, 2: 0.0984169, 3: 0.66075, 4: 0.373582, 5: 0.744951, 6: 0.30257}
+    
+ 
     def __init__(self, ets, solver, robot, pallet1, pallet2,
                  altura_intermedia=0.02, tiempo_mov=3.0):
         self.robot = robot
@@ -181,7 +187,7 @@ class MoverLadrillo:
         print(f"✅ IK exitosa. Pose objetivo:\n{np.array_str(pose.A, precision=4, suppress_small=True)}")
         print(f"➡️  q resuelto: {np.round(q, 4).tolist()} con cintura: {round(cintura_rad, 4)}\n")
 
-        return {
+        paso = {
             "tiempo": self.tiempo_mov,
             "brazo": np.round(q, 4).tolist(),
             "cintura": {
@@ -190,6 +196,12 @@ class MoverLadrillo:
                 14: 0.0   # WaistPitch
             }
         }
+        if mano_izq is not None:
+            paso["mano_izq"] = {int(k): float(v) for k, v in mano_izq.items()}
+        if mano_der is not None:
+            paso["mano_der"] = {int(k): float(v) for k, v in mano_der.items()}
+        return paso
+
     def mover(self, pos_origen: tuple, pos_destino: tuple, cintura_giro_rad=-1.57):
         """
         Genera una rutina para mover un ladrillo desde pallet1 a pallet2.
@@ -223,25 +235,63 @@ class MoverLadrillo:
 
 
         # Secuencia de movimientos
-        rutina.append(self.resolver_pose(T_arriba_origen, cintura_rad=0.0))
+        rutina.append(self.resolver_pose(T_arriba_origen, cintura_rad=1.57, mano_izq=LEFT_HAND_OPEN, mano_der=None))  # Ir encima del ladrillo
 
         pasos = [ 
-            (T_arriba_origen, 0.0),  # Ir encima del ladrillo
-            (pose_origen, 0.0),       # Bajar a tomar el ladrillo
-            (T_arriba_origen, 0.0),   # Subir el ladrillo
-            (T_arriba_origen, cintura_giro_rad),  # Giro de cintura para trasladar
-            (T_arriba_destino, cintura_giro_rad),  # Posición elevada sobre destino
-            (pose_destino, cintura_giro_rad),       # Bajar para dejar el ladrillo
-            (T_arriba_destino, cintura_giro_rad),   # Subir sin el ladrillo
+            (T_arriba_origen, 1.57),  # Ir encima del ladrillo
+            (pose_origen, 1.57),       # Bajar a tomar el ladrillo
+            (T_arriba_origen, 1.57),   # Subir el ladrillo
+            (T_arriba_origen, 0.0),  # Giro de cintura para trasladar
+            (T_arriba_destino, 0.0),  # Posición elevada sobre destino
+            (pose_destino, 0.0),       # Bajar para dejar el ladrillo
+            (T_arriba_destino, 0.0),   # Subir sin el ladrillo
             (T_arriba_destino, 0.0)    # Volver a orientación
         ]
 
-        for idx, (pose, cintura_rad) in enumerate(pasos):
-            paso = self.resolver_pose(pose, cintura_rad)
-            if paso :
+        # for idx, (pose, cintura_rad) in enumerate(pasos):
+        #     paso = self.resolver_pose(pose, cintura_rad)
+        #     if paso :
+        #         rutina.append(paso)
+        #     else:
+        #         print(f"Fallo en el paso {idx + 1} de la rutina.")
+        for idx, (pose, cintura_rad) in enumerate(pasos, start=1):
+        # Inyecta mano solo donde corresponde
+            if idx == 2:
+                # En el contacto de origen: cerrar para agarrar
+                paso = self.resolver_pose(pose, cintura_rad, mano_izq=LEFT_HAND_CLOSE)
+            elif idx == 6:
+                # En el contacto de destino: abrir para soltar
+                paso = self.resolver_pose(pose, cintura_rad, mano_izq=LEFT_HAND_OPEN)
+            else:
+                paso = self.resolver_pose(pose, cintura_rad)
+
+            if paso:
                 rutina.append(paso)
             else:
-                print(f"Fallo en el paso {idx + 1} de la rutina.")
+                print(f"Fallo en el paso {idx} de la rutina.")
 
+# --- Paso final antes del release ---
+
+        # --- Paso final antes del release ---
+        paso_final_brazo = [
+            0.27512645721435547,
+            0.20702576637268066,
+            -0.015451669692993164,
+            0.978867769241333,
+            0.07278227806091309,
+            0.03146076202392578,
+            0.004648685455322266
+        ]
+        paso_final = {
+            "tiempo": 3.0,
+            "brazo": paso_final_brazo,
+            "cintura": {
+                "12": 0.0,  # WaistYaw
+                "13": 0.0,  # WaistRoll
+                "14": 0.0,   # WaistPitch
+            "mano_izq": LEFT_HAND_OPEN
+            }
+        }
+        rutina.append(paso_final)
         return rutina
     

@@ -271,6 +271,9 @@ def main():
     for i, paso in enumerate(pasos):
         q_brazo = paso["brazo"]
         cintura = paso["cintura"]
+        mano_izq = paso.get("mano_izq")  # dict opcional {0..6: q}
+        mano_der = paso.get("mano_der")  # dict opcional {0..6: q}
+        dur = float(paso.get("tiempo", 1.25))
 
         posiciones_brazo = {}
 
@@ -301,6 +304,9 @@ def main():
         print(f"Brazo: {q_brazo}")
         print(f"Cintura: {cintura}")
 
+        if mano_izq is not None: print(f"Mano izq: {mano_izq}")
+        if mano_der is not None: print(f"Mano der: {mano_der}")
+
         res = input("Presiona Enter para continuar, X para salir: ")
         seq.move_to(posiciones_brazo, duration=paso["tiempo"], q_init_override=q_anterior)
 
@@ -316,7 +322,10 @@ def main():
             #time.sleep(2.0)
             #seq.freeze_and_release_a() #Detener y liberar con seguridad el brazo
 
-        
+        if isinstance(mano_izq, dict) and len(mano_izq) > 0:
+            hand_seq.send_left({int(k): float(v) for k, v in mano_izq.items()})
+        if isinstance(mano_der, dict) and len(mano_der) > 0:
+            hand_seq.send_right({{int(k): float(v) for k, v in mano_der.items()}})
 
             break
 
