@@ -174,7 +174,7 @@ class MoverLadrillo:
         self.altura_intermedia = altura_intermedia
         self.tiempo_mov = tiempo_mov
 
-    def resolver_pose(self, pose, cintura_rad=0.0):
+    def resolver_pose(self, pose, cintura_rad=0.0, mano_izq=None, mano_der=None):
         np.random.seed(42)  # Valor fijo para reproducibilidad
         q0 = np.tile(self.robot.qr, (self.solver.slimit, 1))
 
@@ -235,7 +235,7 @@ class MoverLadrillo:
 
 
         # Secuencia de movimientos
-        rutina.append(self.resolver_pose(T_arriba_origen, cintura_rad=1.57, mano_izq=LEFT_HAND_OPEN, mano_der=None))  # Ir encima del ladrillo
+        rutina.append(self.resolver_pose(T_arriba_origen, cintura_rad=1.57, mano_izq=self.LEFT_HAND_OPEN, mano_der=None))  # Ir encima del ladrillo
 
         pasos = [ 
             (T_arriba_origen, 1.57),  # Ir encima del ladrillo
@@ -258,10 +258,10 @@ class MoverLadrillo:
         # Inyecta mano solo donde corresponde
             if idx == 2:
                 # En el contacto de origen: cerrar para agarrar
-                paso = self.resolver_pose(pose, cintura_rad, mano_izq=LEFT_HAND_CLOSE)
+                paso = self.resolver_pose(pose, cintura_rad, mano_izq=self.LEFT_HAND_CLOSE)
             elif idx == 6:
                 # En el contacto de destino: abrir para soltar
-                paso = self.resolver_pose(pose, cintura_rad, mano_izq=LEFT_HAND_OPEN)
+                paso = self.resolver_pose(pose, cintura_rad, mano_izq=self.LEFT_HAND_OPEN)
             else:
                 paso = self.resolver_pose(pose, cintura_rad)
 
@@ -289,7 +289,7 @@ class MoverLadrillo:
                 "12": 0.0,  # WaistYaw
                 "13": 0.0,  # WaistRoll
                 "14": 0.0,   # WaistPitch
-            "mano_izq": LEFT_HAND_OPEN
+            "mano_izq": self.LEFT_HAND_OPEN
             }
         }
         rutina.append(paso_final)
