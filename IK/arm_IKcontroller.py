@@ -13,7 +13,7 @@ from unitree_sdk2py.utils.crc import CRC
 from unitree_sdk2py.utils.thread import RecurrentThread
 
 ruta="release_arm_sdk.txt"
-archivo_csv = "q_steps_pallet_LM.csv"
+archivo_csv = "q_steps_pallet_LM_derecho.csv"
 
 # === Índices de articulaciones ===
 class G1JointIndex:
@@ -244,22 +244,30 @@ def main():
     T_total = 40.0  # Segundos total
     T_step = T_total / len(q_steps)
 
-    arm_joints = [
-        G1JointIndex.LeftShoulderPitch, G1JointIndex.LeftShoulderRoll,
-        G1JointIndex.LeftShoulderYaw, G1JointIndex.LeftElbow,
-        G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
-        G1JointIndex.LeftWristYaw,
-        G1JointIndex.WaistYaw, G1JointIndex.WaistRoll, G1JointIndex.WaistPitch,
+    # arm_joints = [
+    #     G1JointIndex.LeftShoulderPitch, G1JointIndex.LeftShoulderRoll,
+    #     G1JointIndex.LeftShoulderYaw, G1JointIndex.LeftElbow,
+    #     G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
+    #     G1JointIndex.LeftWristYaw,
+    #     G1JointIndex.WaistYaw, G1JointIndex.WaistRoll, G1JointIndex.WaistPitch,
+    #     #Brazo derecho
+    #     G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
+    #     G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
+    #     G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
+    #     G1JointIndex.RightWristYaw,
+
+    # ]
+    arm_joints = [        
         #Brazo derecho
         G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
         G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
         G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
-        G1JointIndex.RightWristYaw,
+        
 
     ]
     
 
-    articulaciones_activas = [0, 1, 2, 3, 4, 5, 6] #Posicion del joint dentro de la lista arm_joints
+    articulaciones_activas = [0, 1, 2, 3, 4, 5] #Posicion del joint dentro de la lista arm_joints
 
     q_anterior = None
 
@@ -281,13 +289,13 @@ def main():
         posiciones_brazo[G1JointIndex.WaistRoll] = 0.0
         posiciones_brazo[G1JointIndex.WaistPitch] = 0.0
 
-        posiciones_brazo[G1JointIndex.RightShoulderPitch] = 0.0
-        posiciones_brazo[G1JointIndex.RightShoulderRoll] = 0.0
-        posiciones_brazo[G1JointIndex.RightShoulderYaw] = 0.0
-        posiciones_brazo[G1JointIndex.RightElbow] = 0.0
-        posiciones_brazo[G1JointIndex.RightWristRoll] = 0.0
-        posiciones_brazo[G1JointIndex.RightWristPitch] = 0.0
-        posiciones_brazo[G1JointIndex.RightWristYaw] = 0.0
+        # posiciones_brazo[G1JointIndex.RightShoulderPitch] = 0.0
+        # posiciones_brazo[G1JointIndex.RightShoulderRoll] = 0.0
+        # posiciones_brazo[G1JointIndex.RightShoulderYaw] = 0.0
+        # posiciones_brazo[G1JointIndex.RightElbow] = 0.0
+        # posiciones_brazo[G1JointIndex.RightWristRoll] = 0.0
+        # posiciones_brazo[G1JointIndex.RightWristPitch] = 0.0
+        # posiciones_brazo[G1JointIndex.RightWristYaw] = 0.0
 
 
         print(f"\n Siguiente paso {i+1}/{len(q_steps)}:")
