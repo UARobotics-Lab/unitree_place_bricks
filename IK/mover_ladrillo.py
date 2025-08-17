@@ -215,6 +215,12 @@ class MoverLadrillo:
         """
         rutina = []
 
+        # Validar posiciones solicitadas antes de obtener las poses
+        if not self.pallet1.is_slot_valid(*pos_origen):
+            raise ValueError("Posición de origen fuera del rango del pallet 1")
+        if not self.pallet2.is_slot_valid(*pos_destino):
+            raise ValueError("Posición de destino fuera del rango del pallet 2")
+
         # Obtener poses
         pose_origen = self.pallet1.get_pose(*pos_origen)
         print("\n[INFO] Pose de origen (SE3):")
@@ -290,9 +296,9 @@ class MoverLadrillo:
             "cintura": {
                 "12": 0.0,  # WaistYaw
                 "13": 0.0,  # WaistRoll
-                "14": 0.0,   # WaistPitch
-            "mano_izq": self.LEFT_HAND_OPEN
-            }
+                "14": 0.0,  # WaistPitch
+            },
+            "mano_izq": self.LEFT_HAND_OPEN,
         }
         rutina.append(paso_final)
         return rutina
