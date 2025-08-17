@@ -201,6 +201,11 @@ class ArmSequence:
         while self.t < self.T:
             time.sleep(self.control_dt)
 
+    def Stop(self):
+        """Detiene el hilo de control del brazo para evitar comandos residuales."""
+        if hasattr(self, "thread"):
+            self.thread.Stop()
+
     def freeze_and_release_a(self):
         for joint in self.arm_joints:
             self.low_cmd.motor_cmd[joint].q = self.low_state.motor_state[joint].q
@@ -308,33 +313,24 @@ def main():
         if mano_der is not None: print(f"Mano der: {mano_der}")
 
         res = input("Presiona Enter para continuar, X para salir: ")
-        seq.move_to(posiciones_brazo, duration=paso["tiempo"], q_init_override=q_anterior)
-
-        if res.lower() == 'x' or i == (len(pasos)-1):
-            input("Proceso cancelado. Presiona Enter para salir.")
-            # for paso in pasitos:
-            #     posiciones = {int(k): v for k, v in paso.get("posiciones", {}).items()}
-            #     duracion = paso.get("duracion", 3.00)
-            #     seq.move_to(posiciones, duration=duracion, q_init_override=q_anterior)
-            #     q_anterior = posiciones
-            
-            #input(" Esperando estabilización antes de liberar el brazo...")
-            #time.sleep(2.0)
-            #seq.freeze_and_release_a() #Detener y liberar con seguridad el brazo
-
-        if isinstance(mano_izq, dict) and len(mano_izq) > 0:
-            hand_seq.send_left({int(k): float(v) for k, v in mano_izq.items()})
-        if isinstance(mano_der, dict) and len(mano_der) > 0:
-            hand_seq.send_right({{int(k): float(v) for k, v in mano_der.items()}})
-
+        if res.lower() == 'x':
+            print("Proceso cancelado por el usuario.")
             break
 
+        if mano_izq:
+            hand_seq.send_left({int(k): float(v) for k, v in mano_izq.items()})
+        if mano_der:
+            hand_seq.send_right({int(k): float(v) for k, v in mano_der.items()})
+
+        seq.move_to(posiciones_brazo, duration=paso["tiempo"], q_init_override=q_anterior)
 
         q_anterior = posiciones_brazo
 
 
   
     
+    time.sleep(1.0)
+    seq.Stop()
     seq.freeze_and_release_a()
     hand_seq.freeze_and_release()
 
