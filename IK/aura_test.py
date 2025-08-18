@@ -189,9 +189,17 @@ print("\n Prueba finalizada.")
 
 pallet_pose = SE3(0.4, 0, 0)  # Posición base del pallet respecto a coordenadas globales
 
-pallet = Pallet(rows=3, cols=4, brick_size=(0.1, 0.2, 0.06), base_pose=pallet_pose)
+layout_mode = "ordenado"  # Cambiar a "inclinado" para filas intercaladas
+pallet = Pallet(
+    rows=3,
+    cols=4,
+    layers=1,
+    brick=(0.1, 0.2, 0.06),
+    base_pose=pallet_pose,
+    layout=layout_mode,
+)
 
 print("Pallet creado con las siguientes poses:")
 
-pose_1_2 = pallet.get_pose(1, 2)
-print(f"Pose del ladrillo en fila 1, columna 2: {pose_1_2}")
+pose_1_2 = pallet.get_pose(1, 2, 0)
+print(f"Pose del ladrillo en fila 1, columna 2, capa 0: {pose_1_2}")

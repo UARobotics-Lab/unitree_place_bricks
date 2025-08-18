@@ -47,17 +47,27 @@ class Brick:
         return self.grasp_points.get(name, self.grasp_points[self.default_grasp])
 
 class Pallet:
-    def __init__(self, rows, cols, layers, brick: Union[Brick, Tuple[float, float, float]], base_pose: SE3 = SE3()):
+    def __init__(
+        self,
+        rows,
+        cols,
+        layers,
+        brick: Union[Brick, Tuple[float, float, float]],
+        base_pose: SE3 = SE3(),
+        gap: Tuple[float, float, float] = (0.0, 0.0, 0.0),
+        layout: str = "ordenado",
+    ):
 
-        """        Inicializa un pallet con una cuadrícula de ladrillos.
+        """Inicializa un pallet con una cuadrícula de ladrillos.
 
         :param rows: Número de filas de ladrillos.
         :param cols: Número de columnas de ladrillos.
         :param brick: Instancia de Brick (dimensiones, grasp points).
-        :param base_pose: Pose base del pallet en coordenadas globales.        
-
+        :param base_pose: Pose base del pallet en coordenadas globales.
+        :param gap: Holgura (separación extra) entre ladrillos en (x, y, z).
+        :param layout: "ordenado" para filas alineadas o "inclinado" para filas intercaladas.
         """
-    
+
         if not isinstance(brick, Brick):
             # permitir (width, length, height)
             w, l, h = brick
@@ -68,29 +78,42 @@ class Pallet:
         self.layers = layers
         self.brick = brick
         self.base_pose = base_pose
+        self.gap = gap
+        self.layout = layout.lower()
+        if self.layout not in {"ordenado", "inclinado"}:
+            raise ValueError("layout debe ser 'ordenado' o 'inclinado'")
 
-        #Separación entre ladrillos
-        self.pitch_x = self.brick.width  # Separación en x (ancho)
-        self.pitch_y = self.brick.length  # Separación en y (largo)
-        self.pitch_z = self.brick.height  # Separación en z (alto)
+        # Separación entre ladrillos (dimensión del ladrillo más la holgura)
+        self.pitch_x = self.brick.width + self.gap[0]   # Separación en x (ancho)
+        self.pitch_y = self.brick.length + self.gap[1]  # Separación en y (largo)
+        self.pitch_z = self.brick.height + self.gap[2]  # Separación en z (alto)
 
+        # Precalcular las poses del centro de cada ladrillo
         self._grid_center = self._create_grid_centers()
 
         #self.grid = self._create_grid()
 
-    def _create_grid_centers(self):
-        """
-        Crea una cuadrícula de posiciones centrales para los ladrillos en el pallet.
+    def _row_offset(self, row: int) -> float:
+        """Desplazamiento en X para una fila dada según el *layout*.
 
+        En modo ``inclinado`` las filas impares se desplazan medio ladrillo en +X.
         """
+
+        if self.layout == "inclinado" and (row % 2 == 1):
+            return self.brick.width / 2.0
+        return 0.0
+
+    def _create_grid_centers(self):
+        """Crea una cuadrícula de posiciones centrales para los ladrillos."""
 
         centers = []
         for i in range(self.rows):
+            offset_x = self._row_offset(i)
             for j in range(self.cols):
                 for k in range(self.layers):
-                    #Posicion del centro del ladrillo k, i, j
-                    x = j * self.pitch_x 
-                    y = i * self.pitch_y 
+                    # Posición del centro del ladrillo k, i, j
+                    x = j * self.pitch_x + offset_x
+                    y = i * self.pitch_y
                     z = k * self.pitch_z
                     local_center = SE3(x, y, z)
                     global_center = self.base_pose * local_center
@@ -108,6 +131,31 @@ class Pallet:
 
     def get_center_pose(self, row: int, col: int, layer: int) -> SE3:
         return self._grid_center[self.index_of(row, col, layer)]
+
+    def is_slot_valid(self, row: int, col: int, layer: int) -> bool:
+        """Verifica si la posición solicitada está dentro del pallet.
+
+        Esta verificación incluye el desplazamiento aplicado en modo ``inclinado``.
+        """
+
+        if not (0 <= row < self.rows and 0 <= col < self.cols and 0 <= layer < self.layers):
+            return False
+
+        offset_x = self._row_offset(row)
+        x_center = col * self.pitch_x + offset_x
+        y_center = row * self.pitch_y
+
+        # Bordes del ladrillo respecto al origen del pallet
+        left = x_center - self.brick.width / 2.0
+        right = x_center + self.brick.width / 2.0
+        front = y_center - self.brick.length / 2.0
+        back = y_center + self.brick.length / 2.0
+
+        x_min, x_max = 0.0, self.cols * self.pitch_x
+        y_min, y_max = 0.0, self.rows * self.pitch_y
+
+        return (x_min <= left <= x_max) and (x_min <= right <= x_max) and \
+               (y_min <= front <= y_max) and (y_min <= back <= y_max)
 
     def _create_grid(self):
 
@@ -136,37 +184,16 @@ class Pallet:
         return poses
     
     def get_pose(self, row, col, layer, grasp: Optional[str] = None) -> SE3:
+        """Devuelve la pose global del centro (o del ``grasp``) de un ladrillo."""
 
-        if not (0 <= row < self.rows and 0 <= col < self.cols and 0 <= layer < self.layers):
+        if not self.is_slot_valid(row, col, layer):
             raise IndexError("Índice fuera de rango definido en el pallet.")
 
-        # índice y pose base de ese hueco
-        index = layer * (self.rows * self.cols) + row * self.cols + col
-        slot_pose = self._grid_center[index]  # o self.grid[index] según tu implementación
+        index = self.index_of(row, col, layer)
+        slot_pose = self._grid_center[index]
 
         # offset local del agarre
         T_grasp_local = self.brick.grasp_pose_local(grasp)
         return slot_pose * T_grasp_local
         
-"""   def get_pose(self, row, col, layer, grasp: GraspName = "top_center", approach_rot: Optional[SO3] = None, approach_offset: float = 0.0) -> SE3:
-       
-        center_world = self.get_center_pose(row, col, layer)
-        
-        #Pose del grasp en el frame del ladrillo
-        T_grasp_local = self.brick.grasp_pose_local(grasp)
-
-        # Orientación del efector: por defecto, misma que el pallet (vertical Z+),
-        # Se puede sobreescribir con approach_rot
-        R_approach = approach_rot if approach_rot is not None else SO3()
-
-        # Armamos: (mundo→centro) * (centro→grasp) * (rot extra de la herramienta)
-        T_grasp_world = center_world * T_grasp_local * SE3(R_approach)
-
-        #Para llegar desde arriba, se agrega un offset en -z del efector
-        if approach_offset != 0.0:
-            T_grasp_world = T_grasp_world * SE3(0, 0, -approach_offset)
-
-        return T_grasp_world """
-        
- 
     
