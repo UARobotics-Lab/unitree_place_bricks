@@ -35,10 +35,12 @@ class MoverLadrillo:
             "tiempo": self.tiempo_mov,
             "brazo": np.round(q, 4).tolist(),
             "cintura": {
-                12: round(cintura_rad, 4),  # WaistYaw
-                13: 0.0,  # WaistRoll
-                14: 0.0,  # WaistPitch
-            },
+
+                "12": round(cintura_rad, 4),  # WaistYaw
+                "13": 0.0,  # WaistRoll
+                "14": 0.0   # WaistPitch
+            }
+
         }
         if mano_izq is not None:
             paso["mano_izq"] = {int(k): float(v) for k, v in mano_izq.items()}
@@ -119,12 +121,14 @@ class MoverLadrillo:
             "tiempo": 3.0,
             "brazo": paso_final_brazo,
             "cintura": {
-                12: 0.0,  # WaistYaw
-                13: 0.0,  # WaistRoll
-                14: 0.0,  # WaistPitch
+
+                "12": 0.0,  # WaistYaw
+                "13": 0.0,  # WaistRoll
+                "14": 0.0   # WaistPitch
             },
-            "mano_izq": self.LEFT_HAND_OPEN,
+            "mano_izq": self.LEFT_HAND_OPEN
         }
         rutina.append(paso_final)
         return rutina
+    
 
