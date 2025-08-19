@@ -151,8 +151,10 @@ class Pallet:
         front = y_center - self.brick.length / 2.0
         back = y_center + self.brick.length / 2.0
 
-        x_min, x_max = 0.0, self.cols * self.pitch_x
-        y_min, y_max = 0.0, self.rows * self.pitch_y
+        x_min = -self.brick.width / 2
+        x_max = (self.cols - 1) * self.pitch_x + self.brick.width / 2
+        y_min = -self.brick.length / 2
+        y_max = (self.rows - 1) * self.pitch_y + self.brick.length / 2
 
         return (x_min <= left <= x_max) and (x_min <= right <= x_max) and \
                (y_min <= front <= y_max) and (y_min <= back <= y_max)
