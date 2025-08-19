@@ -75,17 +75,17 @@ brick = Brick( width=0.1, length=0.2, height=0.06)
 z = 0.10 # Altura del pallet
 orientacion = SO3.Rz(np.deg2rad(90)) 
 
-""" 
-pallet_pose = SE3(0.2, 0, z)  
+"""
+pallet_pose = SE3(0.2, 0, z)
 pallet_pose = SE3(0.1, 0.15, z) * SE3(orientacion)  # Posición base del pallet respecto a coordenadas globales
-pallet = Pallet(rows=2, cols=1, layers=3, brick_size=brick_size, base_pose=pallet_pose)
- """ 
+pallet = Pallet(rows=2, cols=1, layers=3, brick=brick, base_pose=pallet_pose, layout=layout_mode)
+"""
 #Pallet 1 y pallet 2 para mover ladrillos
 pallet1_pose = SE3(0.1, 0.15, z) * SE3(orientacion)
 pallet2_pose = SE3(0.1, 0.15, z) * SE3(orientacion)
 
-pallet1 = Pallet(rows=1, cols=3, layers=3, brick= brick, base_pose=pallet1_pose)
-pallet2 = Pallet(rows=1, cols=3, layers=3, brick= brick, base_pose=pallet2_pose)
+pallet1 = Pallet(rows=1, cols=3, layers=3, brick=brick, base_pose=pallet1_pose, layout=layout_mode)
+pallet2 = Pallet(rows=1, cols=3, layers=3, brick=brick, base_pose=pallet2_pose, layout=layout_mode)
 
 
 # --- Solver de IK ---
