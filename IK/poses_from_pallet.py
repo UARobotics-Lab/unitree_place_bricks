@@ -22,7 +22,7 @@ import json
 
 
 #  Ruta al URDF del robot Aura
-urdf_path = os.path.abspath("g1_dual_arm_copy.urdf") #URDF modificado para Aura
+urdf_path = os.path.abspath("g1_dual_arm_left.urdf") #URDF modificado para Aura
 robot = Robot.URDF(urdf_path)
 robot.qr= [0.0]*robot.n
 print(" Robot Aura cargado.")
@@ -73,7 +73,7 @@ brick = Brick( width=0.1, length=0.2, height=0.06)
 
 # Crear pallet 
 z = 0.10 # Altura del pallet
-orientacion = SO3.Rz(np.deg2rad(0)) 
+orientacion = SO3.Rz(np.deg2rad(90)) 
 
 """ 
 pallet_pose = SE3(0.2, 0, z)  
