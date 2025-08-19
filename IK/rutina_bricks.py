@@ -12,6 +12,12 @@ from unitree_sdk2py.idl.default import unitree_hg_msg_dds__HandCmd_, unitree_hg_
 from unitree_sdk2py.utils.crc import CRC
 from unitree_sdk2py.utils.thread import RecurrentThread
 
+import serial
+import time
+
+ser = serial.Serial('/dev/ttyUSB0',9600, timeout=1)
+
+
 ruta="release_arm_sdk.txt"
 #archivo_csv = "q_steps_pallet_LM.csv"
 archivo_json = "rutina_ladrillo.json"
@@ -132,7 +138,7 @@ class ArmSequence:
             G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
             G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
             G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
-            G1JointIndex.RightWristYaw,
+           
         ]
 
     def Init(self):
@@ -201,6 +207,11 @@ class ArmSequence:
         while self.t < self.T:
             time.sleep(self.control_dt)
 
+    def Stop(self):
+        """Detiene el hilo de control del brazo para evitar comandos residuales."""
+        if hasattr(self, "thread"):
+            self.thread.Stop()
+
     def freeze_and_release_a(self):
         for joint in self.arm_joints:
             self.low_cmd.motor_cmd[joint].q = self.low_state.motor_state[joint].q
@@ -259,7 +270,7 @@ def main():
         G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
         G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
         G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
-        G1JointIndex.RightWristYaw,
+        
 
     ]
     
@@ -271,18 +282,28 @@ def main():
     for i, paso in enumerate(pasos):
         q_brazo = paso["brazo"]
         cintura = paso["cintura"]
-        mano_izq = paso.get("mano_izq")  # dict opcional {0..6: q}
-        mano_der = paso.get("mano_der")  # dict opcional {0..6: q}
+        # mano_izq = paso.get("mano_izq")  # dict opcional {0..6: q}
+        # mano_der = paso.get("mano_der")  # dict opcional {0..6: q}
+        mano_izq_open = paso.get("mano_izq_open")
+        mano_izq_close = paso.get("mano_izq_close")
         dur = float(paso.get("tiempo", 1.25))
 
         posiciones_brazo = {}
 
         # Articulaciones del brazo izquierdo
+        # for j, joint_idx in enumerate([
+        #     G1JointIndex.LeftShoulderPitch, G1JointIndex.LeftShoulderRoll,
+        #     G1JointIndex.LeftShoulderYaw, G1JointIndex.LeftElbow,
+        #     G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
+        #     G1JointIndex.LeftWristYaw
+        # ]):
+        #     posiciones_brazo[joint_idx] = q_brazo[j]
+        # Articulaciones del brazo izquierdo
         for j, joint_idx in enumerate([
-            G1JointIndex.LeftShoulderPitch, G1JointIndex.LeftShoulderRoll,
-            G1JointIndex.LeftShoulderYaw, G1JointIndex.LeftElbow,
-            G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
-            G1JointIndex.LeftWristYaw
+            G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
+            G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
+            G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
+            
         ]):
             posiciones_brazo[joint_idx] = q_brazo[j]
 
@@ -304,37 +325,41 @@ def main():
         print(f"Brazo: {q_brazo}")
         print(f"Cintura: {cintura}")
 
-        if mano_izq is not None: print(f"Mano izq: {mano_izq}")
-        if mano_der is not None: print(f"Mano der: {mano_der}")
+        # if mano_izq is not None: print(f"Mano izq: {mano_izq}")
+        # if mano_der is not None: print(f"Mano der: {mano_der}")
 
         res = input("Presiona Enter para continuar, X para salir: ")
-        seq.move_to(posiciones_brazo, duration=paso["tiempo"], q_init_override=q_anterior)
-
-        if res.lower() == 'x' or i == (len(pasos)-1):
-            input("Proceso cancelado. Presiona Enter para salir.")
-            # for paso in pasitos:
-            #     posiciones = {int(k): v for k, v in paso.get("posiciones", {}).items()}
-            #     duracion = paso.get("duracion", 3.00)
-            #     seq.move_to(posiciones, duration=duracion, q_init_override=q_anterior)
-            #     q_anterior = posiciones
-            
-            #input(" Esperando estabilización antes de liberar el brazo...")
-            #time.sleep(2.0)
-            #seq.freeze_and_release_a() #Detener y liberar con seguridad el brazo
-
-        if isinstance(mano_izq, dict) and len(mano_izq) > 0:
-            hand_seq.send_left({int(k): float(v) for k, v in mano_izq.items()})
-        if isinstance(mano_der, dict) and len(mano_der) > 0:
-            hand_seq.send_right({{int(k): float(v) for k, v in mano_der.items()}})
-
+        if res.lower() == 'x':
+            print("Proceso cancelado por el usuario.")
             break
 
+        # if mano_izq:
+        #     hand_seq.send_left({int(k): float(v) for k, v in mano_izq.items()})
+ 
+        # if mano_der:
+        #     hand_seq.send_right({int(k): float(v) for k, v in mano_der.items()})
+
+        if mano_izq_open:            
+            message_string = 'OPEN\n'
+            bytes_to_send = message_string.encode('utf-8')
+            ser.write(bytes_to_send)
+            print("000 valve open")
+        if mano_izq_close:
+            message_string = 'CLOSE\n'
+            bytes_to_send = message_string.encode('utf-8')
+            ser.write(bytes_to_send)
+            print("III valve close")
+            
+
+        seq.move_to(posiciones_brazo, duration=paso["tiempo"], q_init_override=q_anterior)
 
         q_anterior = posiciones_brazo
 
 
   
     
+    time.sleep(1.0)
+    #seq.Stop()
     seq.freeze_and_release_a()
     hand_seq.freeze_and_release()
 
