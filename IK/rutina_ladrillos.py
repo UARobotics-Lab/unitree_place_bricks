@@ -292,10 +292,10 @@ def main():
         #     posiciones_brazo[joint_idx] = q_brazo[j]
         # Articulaciones del brazo izquierdo
         for j, joint_idx in enumerate([
-            G1JointIndex.LeftShoulderPitch, G1JointIndex.LeftShoulderRoll,
-            G1JointIndex.LeftShoulderYaw, G1JointIndex.LeftElbow,
-            G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
-            G1JointIndex.LeftWristYaw
+            G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
+            G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
+            G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
+            G1JointIndex.RightWristYaw,
         ]):
             posiciones_brazo[joint_idx] = q_brazo[j]
 
