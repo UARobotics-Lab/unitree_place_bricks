@@ -17,6 +17,7 @@ import time
 
 ser = serial.Serial('/dev/ttyUSB0',9600, timeout=1)
 
+
 ruta="release_arm_sdk.txt"
 #archivo_csv = "q_steps_pallet_LM.csv"
 archivo_json = "rutina_ladrillo.json"
