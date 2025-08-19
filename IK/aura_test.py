@@ -66,7 +66,7 @@ import os
 #from roboticstoolbox import Robot
 
 #  Ruta al URDF del robot Aura
-urdf_path = os.path.abspath("g1_dual_arm_copy.urdf") #URDF modificado para Aura
+urdf_path = os.path.abspath("g1_dual_arm_left.urdf") #URDF modificado para Aura
 print(" Usando URDF:", urdf_path)
 
 robot = Robot.URDF(urdf_path)
