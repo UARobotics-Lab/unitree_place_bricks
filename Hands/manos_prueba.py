@@ -1,5 +1,5 @@
 #RUTA DE LA RUTINA
-ruta="recoger.txt"
+ruta="BrazoMano.txt"
 
 import sys
 import time
@@ -228,7 +228,7 @@ class ArmSequence:
         while self.t < self.T:
             time.sleep(self.control_dt)
 
-"""     def freeze_and_release_a(self):
+    def freeze_and_release_a(self):
        for joint in self.arm_joints:
            self.low_cmd.motor_cmd[joint].q = self.low_state.motor_state[joint].q
            self.low_cmd.motor_cmd[joint].dq = 0.0
@@ -238,7 +238,7 @@ class ArmSequence:
        self.low_cmd.motor_cmd[G1JointIndex.kNotUsedJoint].q = 0
        self.low_cmd.crc = self.crc.Crc(self.low_cmd)
        self.publisher.Write(self.low_cmd)
- """
+
 
 #Funciones de ejecución de la rutina
 
@@ -246,7 +246,7 @@ class ArmSequence:
 def main():
     if len(sys.argv) < 2: #Si no hay argumentos, salir
         sys.exit()
-    # ruta_archivo_txt = ruta # RUTA DE LA RUTINA, definido en la parte superior del script
+    ruta_archivo_txt = ruta # RUTA DE LA RUTINA, definido en la parte superior del script
 
     #Apertura del archivo JSON
     try:
@@ -299,22 +299,12 @@ def main():
 
         time.sleep(duracion)  # Esperar la duración del paso
 
-"""     seq.freeze_and_release_a()  # Congelar el brazo al final
+    seq.freeze_and_release_a()  # Congelar el brazo al final
     hand_seq.freeze_and_release()  # Congelar el brazo al final
     
- """
 
 
 
-def main():
-
-    if len(sys.argv) < 2:
-        print("Uso: python manos_prueba.py <ruta_al_archivo_json>")
-        sys.exit(1)
-
-    ruta_archivo_txt = sys.argv[1]  # Ruta al archivo JSON con los pasos
-
-    ejecucion(ruta_archivo_txt)  # Ejecutar la rutina con los pasos del archivo JSON
 
 
 
