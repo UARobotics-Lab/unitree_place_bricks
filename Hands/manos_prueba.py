@@ -1,6 +1,9 @@
 #RUTA DE LA RUTINA
+ruta="BrazoMano_01.txt"
+ruta="LeftFrontFinger.txt"
 ruta="BrazoMano.txt"
-
+ruta="testbrick_conmano.txt"
+# ruta="leftHandClose.txt"
 import sys
 import time
 import math
@@ -117,7 +120,7 @@ class HandSequence:
             msg.motor_cmd[i].tau = 0.0
             msg.motor_cmd[i].kp = self.kp
             msg.motor_cmd[i].kd = self.kd 
-        
+        print(msg)
         self.publisher.Write(self.msg_left)
 
     def send_right(self, posiciones: dict ):
