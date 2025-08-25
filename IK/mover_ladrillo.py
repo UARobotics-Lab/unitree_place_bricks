@@ -64,10 +64,10 @@ class MoverLadrillo:
 
         for n, (pos_origen, pos_destino) in enumerate(zip(posiciones_origen, posiciones_destino)):
             # Validar posiciones solicitadas antes de obtener las poses
-            if not self.pallet1.is_slot_valid(*pos_origen):
-                raise ValueError("Posición de origen fuera del rango del pallet 1")
-            if not self.pallet2.is_slot_valid(*pos_destino):
-                raise ValueError("Posición de destino fuera del rango del pallet 2")
+            # if not self.pallet1.is_slot_valid(*pos_origen):
+            #     raise ValueError("Posición de origen fuera del rango del pallet 1")
+            # if not self.pallet2.is_slot_valid(*pos_destino):
+            #     raise ValueError("Posición de destino fuera del rango del pallet 2")
 
             # Obtener poses de cada par
             pose_origen = self.pallet1.get_pose(*pos_origen)
