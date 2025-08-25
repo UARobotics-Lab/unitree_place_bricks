@@ -186,8 +186,8 @@ class Pallet:
     def get_pose(self, row, col, layer, grasp: Optional[str] = None) -> SE3:
         """Devuelve la pose global del centro (o del ``grasp``) de un ladrillo."""
 
-        if not self.is_slot_valid(row, col, layer):
-            raise IndexError("Índice fuera de rango definido en el pallet.")
+        # if not self.is_slot_valid(row, col, layer):
+        #     raise IndexError("Índice fuera de rango definido en el pallet.")
 
         index = self.index_of(row, col, layer)
         slot_pose = self._grid_center[index]
