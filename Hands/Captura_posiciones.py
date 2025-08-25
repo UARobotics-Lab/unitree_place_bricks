@@ -44,6 +44,7 @@ class G1JointIndex:
     WaistYaw = 12
     WaistRoll = 13
     WaistPitch = 14
+    #Brazos
     LeftShoulderPitch = 15
     LeftShoulderRoll = 16
     LeftShoulderYaw = 17
