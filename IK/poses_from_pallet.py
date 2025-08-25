@@ -20,7 +20,7 @@ from roboticstoolbox import Robot
 import os
 import json
 
-
+#g1_29dof_with_hand_rev_1_0.urdf
 #  Ruta al URDF del robot Aura
 urdf_path = os.path.abspath("g1_dual_arm_left.urdf") #URDF modificado para Aura
 robot = Robot.URDF(urdf_path)
@@ -73,7 +73,8 @@ brick = Brick( width=0.1, length=0.2, height=0.06)
 
 # Crear pallet 
 z = 0.10 # Altura del pallet
-orientacion = SO3.Rz(np.deg2rad(90)) 
+orientacion = SO3.Rz(np.deg2rad(90))
+layout_mode = "ordenado"  # Puede ser "ordenado" o "inclinado"
 
 """
 pallet_pose = SE3(0.2, 0, z)
@@ -123,7 +124,7 @@ cintura_por_pallet = {
 with open("rutina_ladrillo.json", "w") as f:
     json.dump(rutina, f, indent=4)
 
-print("Rutina de movimiento guardada en 'rutina_ladrillo.json'.")
+print("Rutina de movimiento guardada en 'rutina_ladrillo_left.json'.")
 
 
 
@@ -218,5 +219,5 @@ console.print(table)
 
 # --- Convertir a np.array y guardar pasos ---
 q_steps = np.array(q_steps)
-np.savetxt("q_steps_pallet_LM.csv", q_steps, delimiter=",")
-print("Pasos de IK guardados en 'q_steps_pallet_LM.csv'.")
+np.savetxt("q_steps_pallet_LM_leftt.csv", q_steps, delimiter=",")
+print("Pasos de IK guardados en 'q_steps_pallet_LM_left.csv'.")
