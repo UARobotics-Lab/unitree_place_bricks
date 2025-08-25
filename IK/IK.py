@@ -297,7 +297,7 @@ class IK(ABC):
         total_i = 0
         total_t = 0.0
 
-        q_steps = [] #Se guarda cada paso de q para visualización
+        #q_steps = [] #Se guarda cada paso de q para visualización
         
         for search in range(self.slimit):
             q = q0[search].copy()
@@ -314,7 +314,7 @@ class IK(ABC):
 
                     # Acclumulate total time
                     total_t += t
-                    q_steps.append(q.copy())  # Guardar el paso actual de q
+                    #q_steps.append(q.copy())  # Guardar el paso actual de q
                 except np.linalg.LinAlgError:
                     # Abandon search and try again
                     break
@@ -341,13 +341,13 @@ class IK(ABC):
                         # Abandon search and try again
                         break
                     else:
-                        return q, True, total_i + i, search + 1, E, jl_valid, total_t, np.array(q_steps)
+                        return q, True, total_i + i, search + 1, E, jl_valid, total_t #np.array(q_steps)
 
             total_i += i
             i = 0
 
         # If we make it here, then we have failed
-        return q, False, np.nan, np.nan, E, np.nan, np.nan , np.array(q_steps)
+        return q, False, np.nan, np.nan, E, np.nan, np.nan  #np.array(q_steps)
 
     def error(self, Te: np.ndarray, Tep: np.ndarray):
         """
