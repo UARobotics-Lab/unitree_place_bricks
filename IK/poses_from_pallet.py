@@ -114,7 +114,11 @@ q0 = np.tile(robot.qr,(solver.slimit, 1)) + np.random.uniform(-0.3, 0.3, (solver
 
 mover = MoverLadrillo(robot=robot, solver=solver, ets=ets, pallet1=pallet1, pallet2=pallet2)
 
-rutina = mover.mover(pos_origen=(0, 0, 0), pos_destino=(0, 0, 0), cintura_giro_rad=np.deg2rad(90))
+# Ejemplo: mover dos ladrillos de posiciones consecutivas
+posiciones_origen = [(0, 0, 0), (0, 1, 0)]
+posiciones_destino = [(0, 0, 0), (0, 1, 0)]
+
+rutina = mover.mover(posiciones_origen, posiciones_destino, cintura_giro_rad=np.deg2rad(90))
 
 cintura_por_pallet = {
     "Pallet 1": 0.0,

@@ -3,7 +3,7 @@ import numpy as np
 
 
 class MoverLadrillo:
-    """Rutina para trasladar un ladrillo de un pallet a otro."""
+    """Rutinas para trasladar ladrillos entre dos pallets."""
 
     # Presets de mano (ABRIR y CERRAR)
     # LEFT_HAND_OPEN  = {0: 0.452213, 1: 0.228086, 2: 0.416099, 3: 0.700468, 4: 0.476052, 5: 0.805903, 6: 0.365497}
@@ -48,64 +48,65 @@ class MoverLadrillo:
             paso["mano_der"] = {int(k): float(v) for k, v in mano_der.items()}
         return paso
 
-    def mover(self, pos_origen: tuple, pos_destino: tuple, cintura_giro_rad=-1.57):
-        """Genera una rutina para mover un ladrillo desde pallet1 a pallet2."""
+    def mover(self, posiciones_origen, posiciones_destino, cintura_giro_rad=-1.57):
+        """Genera una rutina para trasladar varios ladrillos de un pallet a otro."""
+
+        # Permitir que se pase una sola tupla para compatibilidad hacia atrás
+        if isinstance(posiciones_origen, tuple):
+            posiciones_origen = [posiciones_origen]
+        if isinstance(posiciones_destino, tuple):
+            posiciones_destino = [posiciones_destino]
+
+        if len(posiciones_origen) != len(posiciones_destino):
+            raise ValueError("La cantidad de posiciones de origen y destino debe coincidir")
+
         rutina = []
 
-        # Validar posiciones solicitadas antes de obtener las poses
-        # if not self.pallet1.is_slot_valid(*pos_origen):
-        #     raise ValueError("Posición de origen fuera del rango del pallet 1")
-        # if not self.pallet2.is_slot_valid(*pos_destino):
-        #     raise ValueError("Posición de destino fuera del rango del pallet 2")
+        for n, (pos_origen, pos_destino) in enumerate(zip(posiciones_origen, posiciones_destino)):
+            # Validar posiciones solicitadas antes de obtener las poses
+            if not self.pallet1.is_slot_valid(*pos_origen):
+                raise ValueError("Posición de origen fuera del rango del pallet 1")
+            if not self.pallet2.is_slot_valid(*pos_destino):
+                raise ValueError("Posición de destino fuera del rango del pallet 2")
 
-        # Obtener poses
-        pose_origen = self.pallet1.get_pose(*pos_origen)
-        print("\n[INFO] Pose de origen (SE3):")
-        print(np.array_str(pose_origen.A, precision=4, suppress_small=True))
+            # Obtener poses de cada par
+            pose_origen = self.pallet1.get_pose(*pos_origen)
+            pose_destino = self.pallet2.get_pose(*pos_destino)
 
-        pose_destino = self.pallet2.get_pose(*pos_destino)
-        print("\n[INFO] Pose de destino (SE3):")
-        print(np.array_str(pose_destino.A, precision=4, suppress_small=True))
+            T_arriba_origen = pose_origen * SE3(0, 0, self.altura_intermedia)
+            T_arriba_destino = pose_destino * SE3(0, 0, self.altura_intermedia)
 
-        # Calcular altura intermedia
-        T_arriba_origen = pose_origen * SE3(0, 0, self.altura_intermedia)
-        T_arriba_destino = pose_destino * SE3(0, 0, self.altura_intermedia)
+            # Secuencia de movimientos para un ladrillo
+            pasos = [
+                (T_arriba_origen, 1.57),  # Ir encima del ladrillo
+                (pose_origen, 1.57),       # Bajar a tomar el ladrillo
+                (T_arriba_origen, 1.57),   # Subir el ladrillo
+                (T_arriba_origen, 0.0),    # Giro de cintura para trasladar
+                (T_arriba_destino, 0.0),   # Posición elevada sobre destino
+                (pose_destino, 0.0),       # Bajar para dejar el ladrillo
+                (T_arriba_destino, 0.0),   # Subir sin el ladrillo
+            ]
 
-        print("\n[INFO] Pose elevada sobre origen (T_arriba_origen):")
-        print(np.array_str(T_arriba_origen.A, precision=4, suppress_small=True))
+            for idx, (pose, cintura_rad) in enumerate(pasos, start=1):
+                if idx == 1:
+                    paso = self.resolver_pose(pose, cintura_rad, mano_izq=self.LEFT_HAND_OPEN)
+                elif idx == 2:
+                    paso = self.resolver_pose(pose, cintura_rad, mano_izq=self.LEFT_HAND_CLOSE)
+                elif idx == 6:
+                    paso = self.resolver_pose(pose, cintura_rad, mano_izq=self.LEFT_HAND_OPEN)
+                else:
+                    paso = self.resolver_pose(pose, cintura_rad)
 
-        print("\n[INFO] Pose elevada sobre destino (T_arriba_destino):")
-        print(np.array_str(T_arriba_destino.A, precision=4, suppress_small=True))
+                if paso:
+                    rutina.append(paso)
+                else:
+                    print(f"Fallo en el paso {idx} de la rutina.")
 
-        # Secuencia de movimientos
-        pasos = [
-            (T_arriba_origen, 1.57),  # Ir encima del ladrillo
-            (pose_origen, 1.57),       # Bajar a tomar el ladrillo
-            (T_arriba_origen, 1.57),   # Subir el ladrillo
-            (T_arriba_origen, 0.0),    # Giro de cintura para trasladar
-            (T_arriba_destino, 0.0),   # Posición elevada sobre destino
-            (pose_destino, 0.0),       # Bajar para dejar el ladrillo
-            (T_arriba_destino, 0.0),   # Subir sin el ladrillo
-            (T_arriba_destino, 0.0),   # Volver a orientación
-        ]
-
-        for idx, (pose, cintura_rad) in enumerate(pasos, start=1):
-            if idx == 1:
-                # Aproximación inicial con mano abierta
-                paso = self.resolver_pose(pose, cintura_rad, mano_izq=self.LEFT_HAND_OPEN)
-            elif idx == 2:
-                # En el contacto de origen: cerrar para agarrar
-                paso = self.resolver_pose(pose, cintura_rad, mano_izq=self.LEFT_HAND_CLOSE)
-            elif idx == 6:
-                # En el contacto de destino: abrir para soltar
-                paso = self.resolver_pose(pose, cintura_rad, mano_izq=self.LEFT_HAND_OPEN)
-            else:
-                paso = self.resolver_pose(pose, cintura_rad)
-
-            if paso:
-                rutina.append(paso)
-            else:
-                print(f"Fallo en el paso {idx} de la rutina.")
+            # Rotar de vuelta hacia el pallet de origen si hay más ladrillos
+            if n < len(posiciones_origen) - 1:
+                paso_rot = self.resolver_pose(T_arriba_destino, 1.57)
+                if paso_rot:
+                    rutina.append(paso_rot)
 
         # --- Paso final antes del release ---
         paso_final_brazo = [
@@ -121,12 +122,11 @@ class MoverLadrillo:
             "tiempo": 3.0,
             "brazo": paso_final_brazo,
             "cintura": {
-
-                "12": 0.0,  # WaistYaw
-                "13": 0.0,  # WaistRoll
-                "14": 0.0   # WaistPitch
+                "12": 0.0,
+                "13": 0.0,
+                "14": 0.0,
             },
-            "mano_izq": self.LEFT_HAND_OPEN
+            "mano_izq": self.LEFT_HAND_OPEN,
         }
         rutina.append(paso_final)
         return rutina
