@@ -3,6 +3,8 @@ ruta="BrazoMano_01.txt"
 ruta="LeftFrontFinger.txt"
 ruta="BrazoMano.txt"
 ruta="testbrick_conmano.txt"
+
+
 # ruta="leftHandClose.txt"
 import sys
 import time
@@ -32,6 +34,57 @@ from unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowCmd_, LowState_
 from unitree_sdk2py.idl.default import unitree_hg_msg_dds__LowCmd_
 from unitree_sdk2py.utils.crc import CRC
 from unitree_sdk2py.utils.thread import RecurrentThread
+
+# sequence = ["move_00.txt",
+#             "move_01.txt",
+#             "move_02.txt",
+#             "move_03.txt",
+#             "move_04.txt",
+#             # "initial_hand_position.txt",
+#             "move_00.txt"]
+
+            # "left_base_real.txt",
+            # "center_base_aprox.txt",
+            # "center_base_real.txt",
+            # "right_base_aprox.txt",
+            # "right_base_real.txt",
+            # "side_izquierda_N2.txt",
+            # "side_izquierda_real.txt",
+            # "side_right_aprox.txt",
+            # "side_right_n2_real.txt",
+            # "Top1_Aprox_final.txt",
+            # "Top1_objetivo.txt",
+            # "initial_position_arm.txt",
+
+sequence = ["release_arm_sdk.txt",
+            "initial_position_arm.txt",
+            "R_START_POINT_HAND_OPEN.txt",
+            "R_START_POINT_HAND_CLOSE.txt",
+            "R_N0_RIGHT_IMG.txt",
+            "R_N0_RIGHT_REAL.txt",
+            "R_N0_CENTER_IMG.txt",
+            "R_N0_CENTER_REAL.txt",
+            "R_N0_LEFT_IMG.txt",
+            "R_N0_LEFT_REAL.txt",
+            "R_N1_LEFT_IMG.txt",
+            "R_N1_LEFT_REAL.txt",
+            "R_N1_RIGHT_IMG.txt",
+            "R_N1_RIGHT_REAL.txt",
+            "R_N2_CENTER_IMG.txt",
+            "R_N2_CENTER_REAL.txt",
+            "initial_position_arm.txt",
+            "release_arm_sdk.txt"
+
+            # "RutinaPallets_2.txt",
+            # "initial_position_arm.txt",
+            # "RutinaPallets_3.txt"
+            # "initial_position_arm.txt",
+            # "move_00.txt"
+            ]
+
+release = False
+ruta="./move_steps/"
+home_path = "/home/unitree/"
 
 class G1JointIndex:
     LeftHipPitch = 0
@@ -200,8 +253,25 @@ class ArmSequence:
             self.first_update = True
 
     def interpolate_position(self, q_init, q_target):
-        ratio = (1 - math.cos(math.pi * (self.t / self.T))) / 2 if self.t < self.T else 1.0
-        return q_init + (q_target - q_init) * ratio
+
+        """
+        Perfil polinómico de 5to grado para movimiento suave.
+        """
+        #Normalizacion del tiempo
+        
+        if self.t >= self.T: #self.t es el tiempo actual, self.T es el tiempo total del movimiento
+            s = 1.0
+        else:
+            s = self.t / self.T #s es el tiempo normalizado entre 0 y 1
+
+        #Calculo de potencias de s
+        s3 = s ** 3
+        s4 = s3 * s
+        s5 = s4 * s
+
+        s_quintic = 10 * s3 - 15 * s4 + 6 * s5
+
+        return q_init + (q_target - q_init) * s_quintic
 
     def LowCmdWrite(self):
         if self.low_state is None:
@@ -224,12 +294,14 @@ class ArmSequence:
         self.t += self.control_dt
 
     def move_to(self, updates: dict, duration=1.25, q_init_override=None):
+        self.target_pos = updates.copy() if updates else {}
         self.target_pos.update(updates)
         self.T = duration
         self.t = 0.0
         self.q_init_override = q_init_override
         while self.t < self.T:
             time.sleep(self.control_dt)
+        self.q_init_override = None
 
     def freeze_and_release_a(self):
        for joint in self.arm_joints:
@@ -249,18 +321,6 @@ class ArmSequence:
 def main():
     if len(sys.argv) < 2: #Si no hay argumentos, salir
         sys.exit()
-    ruta_archivo_txt = ruta # RUTA DE LA RUTINA, definido en la parte superior del script
-
-    #Apertura del archivo JSON
-    try:
-        with open(ruta_archivo_txt, 'r') as f:
-            data = json.load(f)
-    except:
-        sys.exit()
-
-    #Obtener los pasos del archivo JSON
-    #Se espera que el JSON tenga una estructura como {"pasos": [{"posiciones":
-    pasos = data.get("pasos", []) #Lista de pasos, cada uno con un diccionario de posiciones y duración
 
     ChannelFactoryInitialize(0, sys.argv[1]) #Inicializar el canal de comunicación DDS
     
@@ -273,36 +333,53 @@ def main():
     #hand_seq.freeze_and_release() #Congelar la mano antes de iniciar
     #seq.freeze_and_release_a() #Congelar el brazo antes de iniciar
 
-    q_anterior = None #Posición anterior del brazo, para interpolación
+    #Apertura del archivo JSON
+    for file in sequence:
+        print(f"{file}")
+        input(" *** Run next step file ***")
+        try:
+            with open(ruta + file , 'r') as f:
+                data = json.load(f)
+        except:
+            sys.exit()
 
-    for paso in pasos:
-        #Obtener las posiciones y duración del paso actual
-        posiciones = paso.get("posiciones", {})
-        duracion = paso.get("duracion", 1.25) #Si no se especifica duración, usar 1.25 segundos
+        #Obtener los pasos del archivo JSON
+        #Se espera que el JSON tenga una estructura como {"pasos": [{"posiciones":
+        pasos = data.get("pasos", []) #Lista de pasos, cada uno con un diccionario de posiciones y duración
 
-        #Dividir las posiciones: brazo/cintura (int), manos (str)
-        posiciones_brazo = {int(k): v for k, v in posiciones.items() if isinstance(k, int) or k.isdigit()}
-        posiciones_mano_izq = {int(k.split('_')[-1]): v for k, v in posiciones.items() if isinstance(k, str) and k.startswith("mano_izq") }
-        posiciones_mano_der = {int(k.split('_')[-1]): v for k, v in posiciones.items() if isinstance(k, str) and k.startswith("mano_der")}
+        q_anterior = None #Posición anterior del brazo, para interpolación
 
-        #Mover brazo y cintura
-        if posiciones_brazo:
+        for paso in pasos:
+            #Obtener las posiciones y duración del paso actual
+            posiciones = paso.get("posiciones", {})
+            duracion = paso.get("duracion", 1.25) #Si no se especifica duración, usar 1.25 segundos
+
+            #Dividir las posiciones: brazo/cintura (int), manos (str)
+            posiciones_brazo = {int(k): v for k, v in posiciones.items() if isinstance(k, int) or k.isdigit()}
+            posiciones_mano_izq = {int(k.split('_')[-1]): v for k, v in posiciones.items() if isinstance(k, str) and k.startswith("mano_izq") }
+            posiciones_mano_der = {int(k.split('_')[-1]): v for k, v in posiciones.items() if isinstance(k, str) and k.startswith("mano_der")}
+
             #Mover brazo y cintura
-            seq.move_to(posiciones_brazo, duration=duracion, q_init_override=q_anterior)
-            q_anterior = posiciones_brazo
+            if posiciones_brazo:
+                #Mover brazo y cintura
+                seq.move_to(posiciones_brazo, duration=duracion, q_init_override=q_anterior)
+                q_anterior = posiciones_brazo
 
-        #Mover manos
-        if posiciones_mano_izq:
-            #Mover mano izquierda        
-            hand_seq.send_left(posiciones_mano_izq)
+            #Mover manos
+            if posiciones_mano_izq:
+                #Mover mano izquierda        
+                hand_seq.send_left(posiciones_mano_izq)
 
-        if posiciones_mano_der:
-            #Mover mano derecha            
-            hand_seq.send_right(posiciones_mano_der)
+            if posiciones_mano_der:
+                #Mover mano derecha            
+                hand_seq.send_right(posiciones_mano_der)
 
-        time.sleep(duracion)  # Esperar la duración del paso
+            # time.sleep(duracion)  # Esperar la duración del paso
+        
 
-    seq.freeze_and_release_a()  # Congelar el brazo al final
+    if release == True:
+        seq.freeze_and_release_a()  # Congelar el brazo al final
+    
     hand_seq.freeze_and_release()  # Congelar el brazo al final
     
 
