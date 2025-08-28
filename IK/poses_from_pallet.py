@@ -116,7 +116,7 @@ mover = MoverLadrillo(robot=robot, solver=solver, ets=ets, pallet1=pallet1, pall
 
 # Ejemplo: mover dos ladrillos de posiciones consecutivas
 posiciones_origen = [(0, 0, 0), (0, 1, 0)]
-posiciones_destino = [(0, 0, 0), (0, 1, 0)]
+posiciones_destino = [(0, 0, 1), (0, 1, 1)]
 
 rutina = mover.mover(posiciones_origen, posiciones_destino, cintura_giro_rad=np.deg2rad(90))
 
