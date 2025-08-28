@@ -311,10 +311,21 @@ def main():
         if mano_der is not None: print(f"Mano der: {mano_der}")
 
         res = input("Presiona Enter para continuar, X para salir: ")
+
+        # Cancelación limpia: mover a postura segura (release) y terminar
+        if res.lower() == 'x':
+            print("Cancelado por el usuario. Moviendo a postura segura de release...")
+            for paso_rel in pasitos:
+                posiciones_rel = {int(k): v for k, v in paso_rel.get("posiciones", {}).items()}
+                duracion_rel = paso_rel.get("duracion", 3.00)
+                seq.move_to(posiciones_rel, duration=duracion_rel, q_init_override=q_anterior)
+                q_anterior = posiciones_rel
+            seq.freeze_and_release_a()
+            hand_seq.freeze_and_release()
+            return
         seq.move_to(posiciones_brazo, duration=paso["tiempo"], q_init_override=q_anterior)
 
-        if res.lower() == 'x' or i == (len(pasos)-1):
-            input("Proceso cancelado. Presiona Enter para salir.")
+        
             # for paso in pasitos:
             #     posiciones = {int(k): v for k, v in paso.get("posiciones", {}).items()}
             #     duracion = paso.get("duracion", 3.00)
