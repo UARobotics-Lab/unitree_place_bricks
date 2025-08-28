@@ -194,12 +194,15 @@ class ArmSequence:
         self.t += self.control_dt
 
     def move_to(self, updates: dict, duration=1.5, q_init_override=None):
-        self.target_pos.update(updates)
+        # Actualiza o restablece la posición objetivo para el siguiente paso
+        self.target_pos = updates.copy() if updates else {}
         self.T = duration
         self.t = 0.0
         self.q_init_override = q_init_override
         while self.t < self.T:
             time.sleep(self.control_dt)
+        # Al finalizar el movimiento se limpia cualquier override inicial
+        self.q_init_override = None
 
     def freeze_and_release_a(self):
         for joint in self.arm_joints:
@@ -325,9 +328,8 @@ def main():
         if isinstance(mano_izq, dict) and len(mano_izq) > 0:
             hand_seq.send_left({int(k): float(v) for k, v in mano_izq.items()})
         if isinstance(mano_der, dict) and len(mano_der) > 0:
-            hand_seq.send_right({{int(k): float(v) for k, v in mano_der.items()}})
+            hand_seq.send_right({int(k): float(v) for k, v in mano_der.items()})
 
-            break
 
 
         q_anterior = posiciones_brazo
