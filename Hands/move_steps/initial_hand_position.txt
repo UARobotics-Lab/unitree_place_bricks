@@ -1,0 +1,19 @@
+{
+  "nombre_rutina": "HandClosed",
+  "fecha_creacion": "2025-06-28 04:10:43",
+  "numero_pasos": 7,
+  "pasos": [
+    {"nombre": "Paso Rotar Hombro",
+      "posiciones": {        
+        "mano_izq_0": 0,
+        "mano_izq_1": 1.0,
+        "mano_izq_2": 1.75,
+        "mano_izq_3": -1.57,
+        "mano_izq_4": -1.75,
+        "mano_izq_5": -1.57,
+        "mano_izq_6": -1.75
+      },
+      "duracion": 2.0
+    }
+  ]
+}
