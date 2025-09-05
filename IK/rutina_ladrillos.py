@@ -5,7 +5,7 @@ import numpy as np
 import csv
 import pandas as pd
 import json
-
+import os
 from unitree_sdk2py.core.channel import ChannelPublisher, ChannelSubscriber, ChannelFactoryInitialize
 from unitree_sdk2py.idl.unitree_hg.msg.dds_ import HandCmd_, HandState_, LowCmd_, LowState_
 from unitree_sdk2py.idl.default import unitree_hg_msg_dds__HandCmd_, unitree_hg_msg_dds__LowCmd_
@@ -32,29 +32,50 @@ from unitree_sdk2py.utils.thread import RecurrentThread
 #             "release_arm_sdk.txt"
 #             ]
 
-sequence = ["release_arm_sdk.txt",
-            "initial_position_arm.txt",
-            "R_START_POINT_HAND_OPEN.txt",
-            "R_START_POINT_HAND_CLOSE.txt",
-            # "R_N0_RIGHT_IMG.txt",
-            # "R_N0_RIGHT_REAL.txt",
-            # "R_N0_CENTER_IMG.txt",
-            # "R_N0_CENTER_REAL.txt",
-            # "R_N0_LEFT_IMG.txt",
-            # "R_N0_LEFT_REAL.txt",
-            # "R_N1_LEFT_IMG.txt",
-            # "R_N1_LEFT_REAL.txt",
-            # "R_N1_RIGHT_IMG.txt",
-            # "R_N1_RIGHT_REAL.txt",
-            # "R_N2_CENTER_IMG.txt",
-            # "R_N2_CENTER_REAL.txt",
-            # "initial_position_arm.txt",
-            "release_arm_sdk.txt"
+# sequence = ["R_JOIN_INITIAL_POSITION.json",
+#             "R_JOIN_RESTORE_POSITION.json"
+#             ]
+
+sequence = ["R_PICK_PLACE_N2_TOP_TO_N0_LEFT.json"]
+
+sequence = ["R_PICK_PLACE_N1_RIGHT_TO_N0_CENTER.json"]
+
+sequence = ["R_PICK_PLACE_N1_LEFT_TO_N0_RIGHT.json"]
+
+# sequence = ["R_PICK_PLACE_N0_RIGH_TO_N1_RIGHT .json"]
+
+sequence = ["R_PICK_PLACE_N0_LEFT_TO_N1_LEFT.json"]
+
+sequence = ["R_PICK_PLACE_N0_LEFT_TO_N2_TOP.json"]
+
+sequence = ["R_00_PICK_PLACE_N2_TOP_TO_N0_RIGHT.json",
+            "R_01_PICK_PLACE_N1_RIGHT_TO_N0_CENTER.json",
+            "R_02_PICK_PLACE_N1_LEFT_TO_N0_LEFT.json",
+            "R_03_PICK_PLACE_N0_RIGHT_TO_N1_RIGHT .json",
+            "R_04_PICK_PLACE_N0_CENTER_TO_N1_LEFT.json",
+            "R_05_PICK_PLACE_N0_LEFT_TO_N2_TOP.json"]
+
+sequence = ["R_RW_00_PICK_PLACE_N2_TOP_TO_N0_RIGHT.json",
+            "R_RW_01_PICK_PLACE_N1_RIGHT_TO_N0_CENTER.json"]
+            
+sequence = ["R_TJOIN_RW_00_PICK_PLACE_N2_TOP_TO_N0_RIGHT.json",
+            "R_SAME_PLACE_01_PICK_PLACE_N2_TOP_TO_N0_RIGHT.json"]
+
+# sequence = ["R_SAME_PLACE_00_PICK_PLACE_NS_TO_N0_LEFT.json",
+#             "R_SAME_PLACE_01_PICK_PLACE_NS_TO_N0_CENTER.json"
+#             ]
+
+sequence = ["R_SAME_PLACE_00_PICK_PLACE_NS_TO_N0_LEFT.json",
+            "R_SAME_PLACE_01_PICK_PLACE_NS_TO_N0_CENTER.json",
+            "R_SAME_PLACE_02_PICK_PLACE_NS_TO_N1_RIGHT.json",
+            "00_PLANTILLA.json"
             ]
 
-# ruta="release_arm_sdk.txt"
-#archivo_csv = "q_steps_pallet_LM.csv"
-# archivo_json = "rutina_ladrillo.json"
+# sequence = ["00_PLANTILLA.json"]
+
+sequence = ["00_LAST_BRICK.json"]
+
+# sequence = ["00_LAST_BRICK_WORK_WITH_DETAILS.json"]
 
 release = False
 ruta="./move_steps/"
@@ -173,8 +194,8 @@ class ArmSequence:
             #Brazo derecho
             G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
             G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
-            G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
-            G1JointIndex.RightWristYaw,
+            # G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
+            # G1JointIndex.RightWristYaw,
         ]
 
     def Init(self):
@@ -259,65 +280,59 @@ class ArmSequence:
 
 # === Bloque principal ===
 def main():
+    ChannelFactoryInitialize(0, sys.argv[1])  # Init DDS
+
+    seq = ArmSequence()
+    hand_seq = HandSequence()
+    seq.Init()
+    seq.Start()
+
+
 
     #ruta_archivo_txt = ruta
 
-    for file in sequence:
 
+    arm_joints = [
+        G1JointIndex.LeftShoulderPitch, G1JointIndex.LeftShoulderRoll,
+        G1JointIndex.LeftShoulderYaw, G1JointIndex.LeftElbow,
+        G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
+        G1JointIndex.LeftWristYaw,
+        G1JointIndex.WaistYaw, G1JointIndex.WaistRoll, G1JointIndex.WaistPitch,
+        #Brazo derecho
+        G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
+        G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
+        # G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
+        # G1JointIndex.RightWristYaw,
+    ]
+
+
+    res = ''
+
+    for file in sequence:
+        print(f"{file}")
         try:
-            with open(ruta + file, 'r') as s:
-                data = json.load(s)
+            with open(ruta + file, "r") as f:
+                pasos = json.load(f)
+                print(pasos)
         except:
             print("error")
             sys.exit()
-
-        pasitos = data.get("pasos", [])
-
-        ChannelFactoryInitialize(0, sys.argv[1])  # Init DDS
-
-        seq = ArmSequence()
-        seq.Init()
-        seq.Start()
-
-        hand_seq = HandSequence()
-
-        # === Carga pasos calculados ===
-        
-        #q_steps = np.loadtxt("q_steps_pallet_LM.csv", delimiter= ',')  # Cargar pasos de LM desde un archivo .csv
-        with open(ruta + file, "r") as f:
-            pasos = json.load(f)
-            print(pasos)
-
-        # if q_steps.ndim == 1:
-        #     q_steps = np.expand_dims(q_steps, axis=0)  # Asegurar que es 2D
-
-        # print(f"Ejecutando {len(q_steps)} pasos con control manual...")
-
-        # T_total = 40.0  # Segundos total
-        # T_step = T_total / len(q_steps)
-
-        arm_joints = [
-            G1JointIndex.LeftShoulderPitch, G1JointIndex.LeftShoulderRoll,
-            G1JointIndex.LeftShoulderYaw, G1JointIndex.LeftElbow,
-            G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
-            G1JointIndex.LeftWristYaw,
-            G1JointIndex.WaistYaw, G1JointIndex.WaistRoll, G1JointIndex.WaistPitch,
-            #Brazo derecho
-            G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
-            G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
-            G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
-            G1JointIndex.RightWristYaw,
-
-        ]
-        
 
         articulaciones_activas = [0, 1, 2, 3, 4, 5, 6] #Posicion del joint dentro de la lista arm_joints
 
         q_anterior = None
 
+        res = input("Presiona Enter para continuar, X para salir: ")
+        if res.lower() == 'x':
+            print("Cancelado por el usuario. Moviendo a postura segura de release...")
+            break
+                
         for i, paso in enumerate(pasos):
+            print(f"{i} *** {file} --- {paso}")
             q_brazo = paso["brazo"]
+            brazo_r = paso["brazo_r"]
             cintura = paso["cintura"]
+            
             mano_izq = paso.get("mano_izq")  # dict opcional {0..6: q}
             mano_der = paso.get("mano_der")  # dict opcional {0..6: q}
             dur = float(paso.get("tiempo", 1.25))
@@ -330,7 +345,7 @@ def main():
                 G1JointIndex.LeftShoulderYaw, G1JointIndex.LeftElbow,
                 G1JointIndex.LeftWristRoll, G1JointIndex.LeftWristPitch,
                 G1JointIndex.LeftWristYaw
-            ]):
+                ]):
                 posiciones_brazo[joint_idx] = q_brazo[j]
 
             # Agregar cintura (Yaw, Roll, Pitch)
@@ -338,58 +353,40 @@ def main():
             posiciones_brazo[G1JointIndex.WaistRoll] = cintura.get("13", 0.0)
             posiciones_brazo[G1JointIndex.WaistPitch] = cintura.get("14", 0.0)
 
-            # # Mantener brazo derecho fijo
-            # for joint in [
-            #     G1JointIndex.RightShoulderPitch, G1JointIndex.RightShoulderRoll,
-            #     G1JointIndex.RightShoulderYaw, G1JointIndex.RightElbow,
-            #     G1JointIndex.RightWristRoll, G1JointIndex.RightWristPitch,
-            #     G1JointIndex.RightWristYaw
-            # ]:
-            #     posiciones_brazo[joint] = 0.0
+            # Right arm
+            posiciones_brazo[G1JointIndex.RightShoulderPitch] = brazo_r.get("22", 0.0)
+            posiciones_brazo[G1JointIndex.RightShoulderRoll] = brazo_r.get("23", 0.0)
+            posiciones_brazo[G1JointIndex.RightShoulderYaw] = brazo_r.get("24", 0.0)
+            posiciones_brazo[G1JointIndex.RightElbow] = brazo_r.get("25", 0.0)
+            # posiciones_brazo[G1JointIndex.RightWristRoll] = brazo_r.get("26", 0.0)
+            # posiciones_brazo[G1JointIndex.RightWristPitch] = brazo_r.get("27", 0.0)
+            # posiciones_brazo[G1JointIndex.RightWristYaw] = brazo_r.get("28", 0.0)
 
-            print(f"\nPaso {i+1}/{len(pasos)}:")
             print(f"Brazo: {q_brazo}")
             print(f"Cintura: {cintura}")
 
             if mano_izq is not None: print(f"Mano izq: {mano_izq}")
             if mano_der is not None: print(f"Mano der: {mano_der}")
 
-            res = input("Presiona Enter para continuar, X para salir: ")
+            # if res.lower()=='x':
+            #     break
 
-            # Cancelación limpia: mover a postura segura (release) y terminar
-            if res.lower() == 'x':
-                print("Cancelado por el usuario. Moviendo a postura segura de release...")
-                for paso_rel in pasitos:
-                    posiciones_rel = {int(k): v for k, v in paso_rel.get("posiciones", {}).items()}
-                    duracion_rel = paso_rel.get("duracion", 3.00)
-                    seq.move_to(posiciones_rel, duration=duracion_rel, q_init_override=q_anterior)
-                    q_anterior = posiciones_rel
-                seq.freeze_and_release_a()
-                hand_seq.freeze_and_release()
-                return
-            
+            # res = input("Presiona Enter para continuar, X para salir: ")
+            # if res.lower() == 'x':
+            #     print("Cancelado por el usuario. Moviendo a postura segura de release...")
+            #     break
+
             seq.move_to(posiciones_brazo, duration=paso["tiempo"], q_init_override=q_anterior)
-
-            
-                # for paso in pasitos:
-                #     posiciones = {int(k): v for k, v in paso.get("posiciones", {}).items()}
-                #     duracion = paso.get("duracion", 3.00)
-                #     seq.move_to(posiciones, duration=duracion, q_init_override=q_anterior)
-                #     q_anterior = posiciones
-                
-                #input(" Esperando estabilización antes de liberar el brazo...")
-                #time.sleep(2.0)
-                #seq.freeze_and_release_a() #Detener y liberar con seguridad el brazo
 
             if isinstance(mano_izq, dict) and len(mano_izq) > 0:
                 hand_seq.send_left({int(k): float(v) for k, v in mano_izq.items()})
             if isinstance(mano_der, dict) and len(mano_der) > 0:
                 hand_seq.send_right({int(k): float(v) for k, v in mano_der.items()})
-
-
-
             q_anterior = posiciones_brazo
 
+            # Cancelación limpia: mover a postura segura (release) y terminar
+
+    time.sleep(0.5)
     if release == True:
         seq.freeze_and_release_a()
 
